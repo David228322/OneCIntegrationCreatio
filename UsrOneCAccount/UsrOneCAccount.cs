@@ -25,11 +25,11 @@ namespace Terrasoft.Configuration.UsrOneCAccount
 	public class OneCAccount
 	{
 		[DataMember(Name = "Id")]
-		public string ID1C { get; set; }
+		public string Id1C { get; set; }
 		[DataMember(Name = "BPMId")]
 		public string LocalId { get; set; }
 		[IgnoreDataMember]
-		public Guid BPMId { get; set; }
+		public Guid BpmId { get; set; }
 		
 		[DataMember(Name = "Name")]
 		public string Name { get; set; }
@@ -45,134 +45,121 @@ namespace Terrasoft.Configuration.UsrOneCAccount
 		private UserConnection _userConnection;
 		[IgnoreDataMember]
 		public UserConnection UserConnection {
-			get {
-				return _userConnection ??
-					(_userConnection = HttpContext.Current.Session["UserConnection"] as UserConnection);
-			}
-			set {
-				_userConnection = value;
-			}
+			get =>
+				_userConnection ??
+				(_userConnection = HttpContext.Current.Session["UserConnection"] as UserConnection);
+			set => _userConnection = value;
 		}
 		
-		public string ProcessRemoteItem(bool IsFull = true)
+		public string ProcessRemoteItem(bool isFull = true)
 		{
-			if ((!string.IsNullOrEmpty(this.LocalId) && this.LocalId != "00000000-0000-0000-0000-000000000000") ||
-				(!string.IsNullOrEmpty(this.ID1C) && this.ID1C != "00000000-0000-0000-0000-000000000000"))
+			if ((string.IsNullOrEmpty(LocalId) || LocalId == "00000000-0000-0000-0000-000000000000") &&
+			    (string.IsNullOrEmpty(Id1C) || Id1C == "00000000-0000-0000-0000-000000000000"))
+				return BpmId.ToString();
+			if (BpmId == Guid.Empty)
 			{
-				if (this.BPMId == Guid.Empty)
-				{
-					this.ResolveRemoteItem();
-				}
-				if (this.BPMId == Guid.Empty || IsFull == true)
-				{
-					this.SaveRemoteItem();
-				}
+				ResolveRemoteItem();
 			}
-			return this.BPMId.ToString();
+			if (BpmId == Guid.Empty || isFull == true)
+			{
+				SaveRemoteItem();
+			}
+			return BpmId.ToString();
 		}
 		
 		public bool ResolveRemoteItem()
 		{
-			bool success = false;
-			
-			if (string.IsNullOrEmpty(this.LocalId) && string.IsNullOrEmpty(this.ID1C))
-				return success;
-			Select _selEntity = new Select(UserConnection)
+			if (string.IsNullOrEmpty(LocalId) && string.IsNullOrEmpty(Id1C))
+				return false;
+			var selEntity = new Select(UserConnection)
 				.Column("Account", "Id").Top(1)
 				.From("Account").As("Account")
 			as Select;
-			if (!string.IsNullOrEmpty(this.LocalId))
-				_selEntity = _selEntity.Where("Account", "Id").IsEqual(Column.Parameter(new Guid(this.LocalId))) as Select;
-			else if (!string.IsNullOrEmpty(this.ID1C))
-				_selEntity = _selEntity.Where("Account", "GenID1C").IsEqual(Column.Parameter(this.ID1C)) as Select;
+			if (!string.IsNullOrEmpty(LocalId))
+				selEntity = selEntity.Where("Account", "Id").IsEqual(Column.Parameter(new Guid(LocalId))) as Select;
+			else if (!string.IsNullOrEmpty(Id1C))
+				selEntity = selEntity.Where("Account", "GenID1C").IsEqual(Column.Parameter(Id1C)) as Select;
 			else
 				return false;
 			
-			Guid _entityId = _selEntity.ExecuteScalar<Guid>();
-			if (_entityId != Guid.Empty)
-			{
-				this.BPMId = _entityId;
-				success = true;
-			}
-			return success;
+			var entityId = selEntity.ExecuteScalar<Guid>();
+			if (entityId == Guid.Empty) return false;
+			BpmId = entityId;
+			return true;
 		}
 		
 		private bool SaveRemoteItem()
 		{
-			bool success = false;
-			Directory directory = new Directory();
+			var success = false;
+			var directory = new Directory();
 		
-			Guid _Owner = Guid.Empty;
+			var owner = Guid.Empty;
 			
-			if (directory.СhekId("Contact", this.OwnerLocalId))
+			if (directory.СhekId("Contact", OwnerLocalId))
 			{
-				_Owner = new Guid(this.OwnerLocalId);
+				owner = new Guid(OwnerLocalId);
 			}
 			
-			var _entity = UserConnection.EntitySchemaManager
+			var entity = UserConnection.EntitySchemaManager
 				.GetInstanceByName("Account").CreateEntity(UserConnection);
-			var _now = DateTime.Now;
+			var now = DateTime.Now;
 			
-			if (this.BPMId == Guid.Empty)
+			if (BpmId == Guid.Empty)
 			{
-				_entity.SetDefColumnValues();
+				entity.SetDefColumnValues();
 			}
-			else if (!_entity.FetchFromDB(_entity.Schema.PrimaryColumn.Name, this.BPMId)) {
-				_entity.SetDefColumnValues();
+			else if (!entity.FetchFromDB(entity.Schema.PrimaryColumn.Name, BpmId)) {
+				entity.SetDefColumnValues();
 			}
 			
-			if (!string.IsNullOrEmpty(this.ID1C))
+			if (!string.IsNullOrEmpty(Id1C))
 			{
-				_entity.SetColumnValue("GenID1C", this.ID1C);
+				entity.SetColumnValue("GenID1C", Id1C);
 			}
 			
-			if (!string.IsNullOrEmpty(this.Name))
+			if (!string.IsNullOrEmpty(Name))
 			{
-				_entity.SetColumnValue("Name", this.Name);
+				entity.SetColumnValue("Name", Name);
 			}
 			
-			if (!string.IsNullOrEmpty(this.Code))
+			if (!string.IsNullOrEmpty(Code))
 			{
-				_entity.SetColumnValue("Code", this.Code);
+				entity.SetColumnValue("Code", Code);
 			}
 			
-			if (_Owner != Guid.Empty)
+			if (owner != Guid.Empty)
 			{
-				_entity.SetColumnValue("OwnerId", _Owner);
+				entity.SetColumnValue("OwnerId", owner);
 			}
 			
-			_entity.SetColumnValue("ModifiedOn", _now);
+			entity.SetColumnValue("ModifiedOn", now);
 		
-			if (_entity.StoringState == StoringObjectState.Changed || this.BPMId == Guid.Empty)
+			if (entity.StoringState == StoringObjectState.Changed || BpmId == Guid.Empty)
 			{
-				success = _entity.Save(true);
+				success = entity.Save(true);
 			}
 			else
 			{
 				success = true;
 			}
-			this.BPMId = (Guid)_entity.GetColumnValue("Id");
-			
-			if (this.BPMId != Guid.Empty)
+			BpmId = (Guid)entity.GetColumnValue("Id");
+
+			if (BpmId == Guid.Empty) return success;
+			if (Addresses == null || Addresses.Count <= 0) return success;
+			foreach (var address in Addresses)
 			{
-				if (this.Addresses != null && this.Addresses.Count > 0)
-				{
-					foreach (var address in this.Addresses)
-					{
-						address.Account = this.BPMId.ToString();
-						address.ProcessRemoteItem();
-					}	
-				}
+				address.Account = BpmId.ToString();
+				address.ProcessRemoteItem();
 			}
 			return success;
 		}
 		
-		public List<OneCAccount> getItem(Search _data)
+		public List<OneCAccount> GetItem(Search data)
 		{
-			List<OneCAccount> result = new List<OneCAccount>();
-			AccountAddres _addres = new AccountAddres();
-			Guid LocalId = Guid.Empty;
-			Select selAcc = new Select(UserConnection)
+			var result = new List<OneCAccount>();
+			var addres = new AccountAddres();
+			var localId = Guid.Empty;
+			var selAcc = new Select(UserConnection)
 				.Column("Account", "Id")
 				.Column("Account", "GenID1C")
 				.Column("Account", "Name")
@@ -183,32 +170,32 @@ namespace Terrasoft.Configuration.UsrOneCAccount
 				//	.On("ContactOwner", "Id").IsEqual("Account", "OwnerId")
 			as Select;
 			
-			if (!string.IsNullOrEmpty(_data.ID1C) || !string.IsNullOrEmpty(_data.LocalId))
+			if (!string.IsNullOrEmpty(data.Id1C) || !string.IsNullOrEmpty(data.LocalId))
 			{
-				if (!string.IsNullOrEmpty(_data.LocalId))
-					selAcc = selAcc.Where("Account", "Id").IsEqual(Column.Parameter(new Guid(_data.LocalId))) as Select;
-				else if (!string.IsNullOrEmpty(_data.ID1C))
-					selAcc = selAcc.Where("Account", "GenID1C").IsEqual(Column.Parameter(_data.ID1C)) as Select;
+				if (!string.IsNullOrEmpty(data.LocalId))
+					selAcc = selAcc.Where("Account", "Id").IsEqual(Column.Parameter(new Guid(data.LocalId))) as Select;
+				else if (!string.IsNullOrEmpty(data.Id1C))
+					selAcc = selAcc.Where("Account", "GenID1C").IsEqual(Column.Parameter(data.Id1C)) as Select;
 				
 			}
-			else if (!string.IsNullOrEmpty(_data.CreatedFrom) || !string.IsNullOrEmpty(_data.CreatedTo))
+			else if (!string.IsNullOrEmpty(data.CreatedFrom) || !string.IsNullOrEmpty(data.CreatedTo))
 			{
-				if (!string.IsNullOrEmpty(_data.CreatedFrom))
-					selAcc = selAcc.Where("Account", "CreatedOn").IsLessOrEqual(Column.Parameter(DateTime.Parse(_data.CreatedFrom))) as Select;
-				else if (!string.IsNullOrEmpty(_data.CreatedFrom) && !string.IsNullOrEmpty(_data.CreatedTo))
-					selAcc = selAcc.And("Account", "CreatedOn").IsGreaterOrEqual(Column.Parameter(DateTime.Parse(_data.CreatedTo))) as Select;
-				else if (!string.IsNullOrEmpty(_data.CreatedTo)) 
-					selAcc = selAcc.Where("Account", "CreatedOn").IsGreaterOrEqual(Column.Parameter(DateTime.Parse(_data.CreatedTo))) as Select;
+				if (!string.IsNullOrEmpty(data.CreatedFrom))
+					selAcc = selAcc.Where("Account", "CreatedOn").IsLessOrEqual(Column.Parameter(DateTime.Parse(data.CreatedFrom))) as Select;
+				else if (!string.IsNullOrEmpty(data.CreatedFrom) && !string.IsNullOrEmpty(data.CreatedTo))
+					selAcc = selAcc.And("Account", "CreatedOn").IsGreaterOrEqual(Column.Parameter(DateTime.Parse(data.CreatedTo))) as Select;
+				else if (!string.IsNullOrEmpty(data.CreatedTo)) 
+					selAcc = selAcc.Where("Account", "CreatedOn").IsGreaterOrEqual(Column.Parameter(DateTime.Parse(data.CreatedTo))) as Select;
 				
 			}
-			else if (!string.IsNullOrEmpty(_data.ModifiedFrom) || !string.IsNullOrEmpty(_data.ModifiedTo))
+			else if (!string.IsNullOrEmpty(data.ModifiedFrom) || !string.IsNullOrEmpty(data.ModifiedTo))
 			{
-				if (!string.IsNullOrEmpty(_data.ModifiedFrom))
-					selAcc = selAcc.Where("Account", "ModifiedOn").IsLessOrEqual(Column.Parameter(DateTime.Parse(_data.ModifiedFrom))) as Select;
-				else if (!string.IsNullOrEmpty(_data.ModifiedFrom) && !string.IsNullOrEmpty(_data.ModifiedTo))
-					selAcc = selAcc.And("Account", "ModifiedOn").IsGreaterOrEqual(Column.Parameter(DateTime.Parse(_data.ModifiedTo))) as Select;
-				else if (!string.IsNullOrEmpty(_data.ModifiedTo)) 
-					selAcc = selAcc.Where("Account", "ModifiedOn").IsGreaterOrEqual(Column.Parameter(DateTime.Parse(_data.ModifiedTo))) as Select;
+				if (!string.IsNullOrEmpty(data.ModifiedFrom))
+					selAcc = selAcc.Where("Account", "ModifiedOn").IsLessOrEqual(Column.Parameter(DateTime.Parse(data.ModifiedFrom))) as Select;
+				else if (!string.IsNullOrEmpty(data.ModifiedFrom) && !string.IsNullOrEmpty(data.ModifiedTo))
+					selAcc = selAcc.And("Account", "ModifiedOn").IsGreaterOrEqual(Column.Parameter(DateTime.Parse(data.ModifiedTo))) as Select;
+				else if (!string.IsNullOrEmpty(data.ModifiedTo)) 
+					selAcc = selAcc.Where("Account", "ModifiedOn").IsGreaterOrEqual(Column.Parameter(DateTime.Parse(data.ModifiedTo))) as Select;
 				
 			}
 			else
@@ -223,11 +210,11 @@ namespace Terrasoft.Configuration.UsrOneCAccount
 					while (reader.Read())
 					{
 						result.Add(new OneCAccount() {
-							LocalId = (reader.GetValue(0) != System.DBNull.Value) ? (string)reader.GetValue(0).ToString() : "",
-							ID1C = (reader.GetValue(1) != System.DBNull.Value) ? (string)reader.GetValue(1) : "",
-							Name = (reader.GetValue(2) != System.DBNull.Value) ? (string)reader.GetValue(2) : "",
-							Code = (reader.GetValue(3) != System.DBNull.Value) ? (string)reader.GetValue(3) : "",
-							OwnerLocalId = (reader.GetValue(14) != System.DBNull.Value) ? (string)reader.GetValue(14).ToString() : ""
+							LocalId = (reader.GetValue(0) != DBNull.Value) ? (string)reader.GetValue(0).ToString() : "",
+							Id1C = (reader.GetValue(1) != DBNull.Value) ? (string)reader.GetValue(1) : "",
+							Name = (reader.GetValue(2) != DBNull.Value) ? (string)reader.GetValue(2) : "",
+							Code = (reader.GetValue(3) != DBNull.Value) ? (string)reader.GetValue(3) : "",
+							OwnerLocalId = (reader.GetValue(14) != DBNull.Value) ? (string)reader.GetValue(14).ToString() : ""
 						});
 					}
 				}
@@ -235,7 +222,7 @@ namespace Terrasoft.Configuration.UsrOneCAccount
 			
 			foreach (var account in result)
 			{
-				account.Addresses = _addres.getItem(account.LocalId);
+				account.Addresses = addres.GetItem(account.LocalId);
 			}
 			
 			return result;
@@ -246,11 +233,11 @@ namespace Terrasoft.Configuration.UsrOneCAccount
 	public class AccountAddres
 	{
 		[DataMember(Name = "Id")]
-		public string ID1C { get; set; }
+		public string Id1C { get; set; }
 		[DataMember(Name = "BPMId")]
 		public string LocalId { get; set; }
 		[IgnoreDataMember]
-		public Guid BPMId { get; set; }
+		public Guid BpmId { get; set; }
 		
 		[DataMember(Name = "Address")]
 		public string Address { get; set; }
@@ -265,133 +252,125 @@ namespace Terrasoft.Configuration.UsrOneCAccount
 		private UserConnection _userConnection;
 		[IgnoreDataMember]
 		public UserConnection UserConnection {
-			get {
-				return _userConnection ??
-					(_userConnection = HttpContext.Current.Session["UserConnection"] as UserConnection);
-			}
-			set {
-				_userConnection = value;
-			}
+			get =>
+				_userConnection ??
+				(_userConnection = HttpContext.Current.Session["UserConnection"] as UserConnection);
+			set => _userConnection = value;
 		}
 		
-		public string ProcessRemoteItem(bool IsFull = true)
+		public string ProcessRemoteItem(bool isFull = true)
 		{
-			if ((!string.IsNullOrEmpty(this.LocalId) && this.LocalId != "00000000-0000-0000-0000-000000000000") ||
-				(!string.IsNullOrEmpty(this.ID1C) && this.ID1C != "00000000-0000-0000-0000-000000000000"))
+			if ((!string.IsNullOrEmpty(LocalId) && LocalId != "00000000-0000-0000-0000-000000000000") ||
+				(!string.IsNullOrEmpty(Id1C) && Id1C != "00000000-0000-0000-0000-000000000000"))
 			{
-				if (this.BPMId == Guid.Empty)
+				if (BpmId == Guid.Empty)
 				{
-					this.ResolveRemoteItem();
+					ResolveRemoteItem();
 				}
-				if (this.BPMId == Guid.Empty || IsFull == true)
+				if (BpmId == Guid.Empty || isFull == true)
 				{
-					this.SaveRemoteItem();
+					SaveRemoteItem();
 				}
 			}
-			return this.BPMId.ToString();
+			return BpmId.ToString();
 		}
 		
 		public bool ResolveRemoteItem()
 		{
-			bool success = false;
-			
-			if (string.IsNullOrEmpty(this.LocalId) && string.IsNullOrEmpty(this.ID1C))
-				return success;
-			Select _selEntity = new Select(UserConnection)
+			if (string.IsNullOrEmpty(LocalId) && string.IsNullOrEmpty(Id1C))
+				return false;
+			var selEntity = new Select(UserConnection)
 				.Column("AccountAddress", "Id").Top(1)
 				.From("AccountAddress").As("AccountAddress")
 			as Select;
-			if (!string.IsNullOrEmpty(this.LocalId))
-				_selEntity = _selEntity.Where("AccountAddress", "Id").IsEqual(Column.Parameter(new Guid(this.LocalId))) as Select;
-			else if (!string.IsNullOrEmpty(this.ID1C))
-				_selEntity = _selEntity.Where("AccountAddress", "GenID1C").IsEqual(Column.Parameter(this.ID1C)) as Select;
+			if (!string.IsNullOrEmpty(LocalId))
+				selEntity = selEntity.Where("AccountAddress", "Id").IsEqual(Column.Parameter(new Guid(LocalId))) as Select;
+			else if (!string.IsNullOrEmpty(Id1C))
+				selEntity = selEntity.Where("AccountAddress", "GenID1C").IsEqual(Column.Parameter(Id1C)) as Select;
 			else
 				return false;
 			
-			Guid _entityId = _selEntity.ExecuteScalar<Guid>();
-			if (_entityId != Guid.Empty)
-			{
-				this.BPMId = _entityId;
-				success = true;
-			}
-			return success;
+			var entityId = selEntity.ExecuteScalar<Guid>();
+			if (entityId == Guid.Empty) return false;
+			BpmId = entityId;
+			return true;
 		}
 		
 		private bool SaveRemoteItem()
 		{
-			bool success = false;
-			var _entity = UserConnection.EntitySchemaManager
+			var success = false;
+			var entity = UserConnection.EntitySchemaManager
 				.GetInstanceByName("AccountAddress").CreateEntity(UserConnection);
-			var _now = DateTime.Now;
+			var now = DateTime.Now;
 			
-			if (this.BPMId == Guid.Empty)
+			if (BpmId == Guid.Empty)
 			{
-				_entity.SetDefColumnValues();
+				entity.SetDefColumnValues();
 			}
-			else if (!_entity.FetchFromDB(_entity.Schema.PrimaryColumn.Name, this.BPMId)) {
-				_entity.SetDefColumnValues();
-			}
-			
-			if (!string.IsNullOrEmpty(this.ID1C))
-			{
-				_entity.SetColumnValue("GenID1C", this.ID1C);
+			else if (!entity.FetchFromDB(entity.Schema.PrimaryColumn.Name, BpmId)) {
+				entity.SetDefColumnValues();
 			}
 			
-			if (!string.IsNullOrEmpty(this.Address))
+			if (!string.IsNullOrEmpty(Id1C))
 			{
-				_entity.SetColumnValue("Address", this.Address);
+				entity.SetColumnValue("GenID1C", Id1C);
 			}
 			
-			if (!string.IsNullOrEmpty(this.FullAddress))
+			if (!string.IsNullOrEmpty(Address))
 			{
-				_entity.SetColumnValue("FullAddress", this.FullAddress);
+				entity.SetColumnValue("Address", Address);
 			}
 			
-			_entity.SetColumnValue("Primary", this.Primary);
-			
-			if (!string.IsNullOrEmpty(this.Account))
+			if (!string.IsNullOrEmpty(FullAddress))
 			{
-				_entity.SetColumnValue("AccountId", new Guid(this.Account));
+				entity.SetColumnValue("FullAddress", FullAddress);
+			}
+			
+			entity.SetColumnValue("Primary", Primary);
+			
+			if (!string.IsNullOrEmpty(Account))
+			{
+				entity.SetColumnValue("AccountId", new Guid(Account));
 			}
 		
-			if (_entity.StoringState == StoringObjectState.Changed || this.BPMId == Guid.Empty)
+			if (entity.StoringState == StoringObjectState.Changed || BpmId == Guid.Empty)
 			{
-				_entity.SetColumnValue("ModifiedOn", _now);
-				success = _entity.Save(true);
+				entity.SetColumnValue("ModifiedOn", now);
+				success = entity.Save(true);
 			}
 			else
 			{
 				success = true;
 			}
-			this.BPMId = (Guid)_entity.GetColumnValue("Id");
+			BpmId = (Guid)entity.GetColumnValue("Id");
 			return success;
 		}
 		
-		public List<AccountAddres> getItem(string _Id)
+		public List<AccountAddres> GetItem(string id)
 		{
-			List<AccountAddres> result = new List<AccountAddres>();
-			Select _selEntity = new Select(UserConnection)
+			var result = new List<AccountAddres>();
+			var selEntity = new Select(UserConnection)
 				.Column("AA", "Id")
 				.Column("AA", "GenID1C")
 				.Column("AA", "Address")
 				.Column("AA", "FullAddress")
 				.Column("AA", "Primary")
 				.From("AccountAddress").As("AA")
-				.Where("AA", "AccountId").IsEqual(Column.Parameter(new Guid(_Id)))
+				.Where("AA", "AccountId").IsEqual(Column.Parameter(new Guid(id)))
 			as Select;
 			
 			using (var dbExecutor = UserConnection.EnsureDBConnection())
 			{
-				using (var reader = _selEntity.ExecuteReader(dbExecutor))
+				using (var reader = selEntity.ExecuteReader(dbExecutor))
 				{
 					while (reader.Read())
 					{
 						result.Add(new AccountAddres(){
-							LocalId = (reader.GetValue(0) != System.DBNull.Value) ? (string)reader.GetValue(0).ToString() : "",
-							ID1C = (reader.GetValue(1) != System.DBNull.Value) ? (string)reader.GetValue(1) : "",
-							Address = (reader.GetValue(2) != System.DBNull.Value) ? (string)reader.GetValue(2) : "",
-							FullAddress = (reader.GetValue(3) != System.DBNull.Value) ? (string)reader.GetValue(3) : "",
-							Primary = (reader.GetValue(4) != System.DBNull.Value) ? (bool)reader.GetValue(4) : false
+							LocalId = (reader.GetValue(0) != DBNull.Value) ? (string)reader.GetValue(0).ToString() : "",
+							Id1C = (reader.GetValue(1) != DBNull.Value) ? (string)reader.GetValue(1) : "",
+							Address = (reader.GetValue(2) != DBNull.Value) ? (string)reader.GetValue(2) : "",
+							FullAddress = (reader.GetValue(3) != DBNull.Value) ? (string)reader.GetValue(3) : "",
+							Primary = (reader.GetValue(4) != DBNull.Value) && (bool)reader.GetValue(4)
 						});	
 					}
 				}
@@ -399,5 +378,4 @@ namespace Terrasoft.Configuration.UsrOneCAccount
 			return result;
 		}
 	}
-	
- }
+}

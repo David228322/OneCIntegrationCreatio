@@ -33,9 +33,9 @@ namespace Terrasoft.Configuration.UsrOneCSvcIntegration
 			RequestFormat = WebMessageFormat.Json, ResponseFormat = WebMessageFormat.Json)]
 		public InfoResult SetOneCAccount(OneCAccount account)
 		{
-			Stopwatch _stopwatch = new Stopwatch();
-			_stopwatch.Start();
-			InfoResult result = new InfoResult();
+			var stopwatch = new Stopwatch();
+			stopwatch.Start();
+			var result = new InfoResult();
 			
 			try
 			{
@@ -47,10 +47,10 @@ namespace Terrasoft.Configuration.UsrOneCSvcIntegration
 				result.Result = "ERROR";
 				result.Error = ex.Message;
 			
-				LogHelper.Log(UserConnection, LogHelper.LogResult.ERROR, "SetOneCAccount"+ex.Message, _stopwatch, LogHelper.IntegrationDirection.IMPORT, account);
+				LogHelper.Log(UserConnection, LogHelper.LogResult.Error, "SetOneCAccount"+ex.Message, stopwatch, LogHelper.IntegrationDirection.Import, account);
 				throw new Exception(ex.Message);
 			}
-			LogHelper.Log(UserConnection, LogHelper.LogResult.OK, "SetOneCAccount", _stopwatch, LogHelper.IntegrationDirection.IMPORT, account);
+			LogHelper.Log(UserConnection, LogHelper.LogResult.Ok, "SetOneCAccount", stopwatch, LogHelper.IntegrationDirection.Import, account);
 			
 			return result;
 		}
@@ -60,9 +60,9 @@ namespace Terrasoft.Configuration.UsrOneCSvcIntegration
 			RequestFormat = WebMessageFormat.Json, ResponseFormat = WebMessageFormat.Json)]
 		public List<OneCAccount> GetAccountInfo(Search account)
 		{
-			OneCAccount _Account = new OneCAccount();
-			List<OneCAccount> result = new List<OneCAccount>();
-			result = _Account.getItem(account);
+			var oneCAccount = new OneCAccount();
+			var result = new List<OneCAccount>();
+			result = oneCAccount.GetItem(account);
 			return result;
 		}
 		
@@ -71,9 +71,9 @@ namespace Terrasoft.Configuration.UsrOneCSvcIntegration
 			RequestFormat = WebMessageFormat.Json, ResponseFormat = WebMessageFormat.Json)]
 		public InfoResult SetContactInfo(OneCContact contact)
 		{
-			Stopwatch _stopwatch = new Stopwatch();
-			_stopwatch.Start();
-			InfoResult result = new InfoResult();
+			var stopwatch = new Stopwatch();
+			stopwatch.Start();
+			var result = new InfoResult();
 			
 			try
 			{
@@ -85,10 +85,10 @@ namespace Terrasoft.Configuration.UsrOneCSvcIntegration
 				result.Result = "ERROR";
 				result.Error = ex.Message;
 			
-				LogHelper.Log(UserConnection, LogHelper.LogResult.ERROR, "SetOneCContact"+ex.Message, _stopwatch, LogHelper.IntegrationDirection.IMPORT, contact);
+				LogHelper.Log(UserConnection, LogHelper.LogResult.Error, "SetOneCContact"+ex.Message, stopwatch, LogHelper.IntegrationDirection.Import, contact);
 				throw new Exception(ex.Message);
 			}
-			LogHelper.Log(UserConnection, LogHelper.LogResult.OK, "SetOneCContact", _stopwatch, LogHelper.IntegrationDirection.IMPORT, contact);
+			LogHelper.Log(UserConnection, LogHelper.LogResult.Ok, "SetOneCContact", stopwatch, LogHelper.IntegrationDirection.Import, contact);
 			
 			return result;
 		}
@@ -98,11 +98,11 @@ namespace Terrasoft.Configuration.UsrOneCSvcIntegration
 			RequestFormat = WebMessageFormat.Json, ResponseFormat = WebMessageFormat.Json)]
 		public List<OneCContact> GetContactInfo(Search contact)
 		{
-			Stopwatch _stopwatch = new Stopwatch();
-			_stopwatch.Start();
-			OneCContact _Contact = new OneCContact();
-			List<OneCContact> result = new List<OneCContact>();
-			result = _Contact.getItem(contact);
+			var stopwatch = new Stopwatch();
+			stopwatch.Start();
+			var oneCContact = new OneCContact();
+			var result = new List<OneCContact>();
+			result = oneCContact.GetItem(contact);
 			return result;
 		}
 		
@@ -111,9 +111,9 @@ namespace Terrasoft.Configuration.UsrOneCSvcIntegration
 			RequestFormat = WebMessageFormat.Json, ResponseFormat = WebMessageFormat.Json)]
 		public InfoResult SetContractInfo(OneCContract contract)
 		{
-			Stopwatch _stopwatch = new Stopwatch();
-			_stopwatch.Start();
-			InfoResult result = new InfoResult();
+			var stopwatch = new Stopwatch();
+			stopwatch.Start();
+			var result = new InfoResult();
 			
 			try
 			{
@@ -125,10 +125,10 @@ namespace Terrasoft.Configuration.UsrOneCSvcIntegration
 				result.Result = "ERROR";
 				result.Error = ex.Message;
 			
-				LogHelper.Log(UserConnection, LogHelper.LogResult.ERROR, "SetOneCContract"+ex.Message, _stopwatch, LogHelper.IntegrationDirection.IMPORT, contract);
+				LogHelper.Log(UserConnection, LogHelper.LogResult.Error, "SetOneCContract"+ex.Message, stopwatch, LogHelper.IntegrationDirection.Import, contract);
 				throw new Exception(ex.Message);
 			}
-			LogHelper.Log(UserConnection, LogHelper.LogResult.OK, "SetOneCContract", _stopwatch, LogHelper.IntegrationDirection.IMPORT, contract);
+			LogHelper.Log(UserConnection, LogHelper.LogResult.Ok, "SetOneCContract", stopwatch, LogHelper.IntegrationDirection.Import, contract);
 			
 			return result;
 		}
@@ -138,11 +138,11 @@ namespace Terrasoft.Configuration.UsrOneCSvcIntegration
 			RequestFormat = WebMessageFormat.Json, ResponseFormat = WebMessageFormat.Json)]
 		public List<OneCContract> GetContractInfo(Search contract)
 		{
-			Stopwatch _stopwatch = new Stopwatch();
-			_stopwatch.Start();
-			List<OneCContract> result = new List<OneCContract>();
-			OneCContract _Contract = new OneCContract();
-			result = _Contract.getItem(contract);
+			var stopwatch = new Stopwatch();
+			stopwatch.Start();
+			var result = new List<OneCContract>();
+			var oneCContract = new OneCContract();
+			result = oneCContract.GetItem(contract);
 			return result;
 		}
 	}
@@ -153,63 +153,60 @@ namespace Terrasoft.Configuration.UsrOneCSvcIntegration
 		private UserConnection _userConnection;
 		[IgnoreDataMember]
 		public UserConnection UserConnection {
-			get {
-				return _userConnection ??
-					(_userConnection = HttpContext.Current.Session["UserConnection"] as UserConnection);
-			}
-			set {
-				_userConnection = value;
-			}
+			get =>
+				_userConnection ??
+				(_userConnection = HttpContext.Current.Session["UserConnection"] as UserConnection);
+			set => _userConnection = value;
 		}
 		
-		public Guid GetId(string _SchemaName, string _Name, string _ColumnName = "Name")
+		public Guid GetId(string schemaName, string name, string columnName = "Name")
 		{
-			Guid result = Guid.Empty;
-			Select _selEntity = new Select(UserConnection)
+			var result = Guid.Empty;
+			var selEntity = new Select(UserConnection)
 				.Column("Id").Top(1)
-				.From(_SchemaName)
-				.Where(_ColumnName).IsLike(Column.Parameter("%" + _Name + "%"))
+				.From(schemaName)
+				.Where(columnName).IsLike(Column.Parameter("%" + name + "%"))
 			as Select;
 			
-			result = _selEntity.ExecuteScalar<Guid>();
+			result = selEntity.ExecuteScalar<Guid>();
 			
-			if (result == Guid.Empty && _ColumnName == "Name")
+			if (result == Guid.Empty && columnName == "Name")
 			{
-				var _entity = UserConnection.EntitySchemaManager
-				.GetInstanceByName(_SchemaName).CreateEntity(UserConnection);
-				var _now = DateTime.Now;
+				var entity = UserConnection.EntitySchemaManager
+				.GetInstanceByName(schemaName).CreateEntity(UserConnection);
+				var now = DateTime.Now;
 				
-				_entity.SetDefColumnValues();
+				entity.SetDefColumnValues();
 				
-				_entity.SetColumnValue("Name", _Name);
-				_entity.SetColumnValue("ModifiedOn", _now);
-				_entity.Save(true);
+				entity.SetColumnValue("Name", name);
+				entity.SetColumnValue("ModifiedOn", now);
+				entity.Save(true);
 			
-				result = (Guid)_entity.GetColumnValue("Id");
+				result = (Guid)entity.GetColumnValue("Id");
 			}
 			
 			return result;
 		}
 		
-		public bool СhekId(string _SchemaName, string _Id = "", string _Name = "")
+		public bool СhekId(string schemaName, string id = "", string name = "")
 		{
-			bool result = false;
-			Guid Id = Guid.Empty;
-			Select _selEntity = new Select(UserConnection)
-				.Column("Id").Top(1)
-				.From(_SchemaName)
-			as Select;
+			var result = false;
+			var guidId = Guid.Empty;
+			var selEntity = new Select(UserConnection)
+					.Column("Id").Top(1)
+					.From(schemaName)
+				as Select;
 			
-			if (!string.IsNullOrEmpty(_Id))
-				_selEntity = _selEntity.Where("Id").IsEqual(Column.Parameter(new Guid(_Id))) as Select;
-			else if (!string.IsNullOrEmpty(_Name))
-				_selEntity = _selEntity.Where("Name").IsLike(Column.Parameter("%" + _Name + "%")) as Select;
+			if (!string.IsNullOrEmpty(id))
+				selEntity = selEntity.Where("Id").IsEqual(Column.Parameter(new Guid(id))) as Select;
+			else if (!string.IsNullOrEmpty(name))
+				selEntity = selEntity.Where("Name").IsLike(Column.Parameter("%" + name + "%")) as Select;
 			else
-				return result;
+				return false;
 			
-			Id = _selEntity.ExecuteScalar<Guid>();
+			guidId = selEntity.ExecuteScalar<Guid>();
 			
-			if (Id != Guid.Empty)
+			if (guidId != Guid.Empty)
 			{
 				result = true;
 			}
@@ -217,47 +214,45 @@ namespace Terrasoft.Configuration.UsrOneCSvcIntegration
 			return result;
 		}
 		
-		public Guid GetSerialId(string _ProductId, string _SerialName)
+		public Guid GetSerialId(string productId, string serialName)
 		{
-			Guid result = Guid.Empty;
-			Select _selEntity = new Select(UserConnection)
+			var result = Guid.Empty;
+			var selEntity = new Select(UserConnection)
 				.Column("Id").Top(1)
 				.From("GenSerial")
-				.Where("GenProductId").IsEqual(Column.Parameter(new Guid(_ProductId)))
-				.And("Name").IsLike(Column.Parameter("%" + _SerialName + "%"))
+				.Where("GenProductId").IsEqual(Column.Parameter(new Guid(productId)))
+				.And("Name").IsLike(Column.Parameter("%" + serialName + "%"))
 			as Select;
 			
-			result = _selEntity.ExecuteScalar<Guid>();
-			
-			if (result == Guid.Empty)
-			{
-				var _entity = UserConnection.EntitySchemaManager
+			result = selEntity.ExecuteScalar<Guid>();
+
+			if (result != Guid.Empty) return result;
+			var entity = UserConnection.EntitySchemaManager
 				.GetInstanceByName("GenSerial").CreateEntity(UserConnection);
-				var _now = DateTime.Now;
+			var now = DateTime.Now;
 				
-				_entity.SetDefColumnValues();
+			entity.SetDefColumnValues();
 				
-				_entity.SetColumnValue("Name", _SerialName);
-				_entity.SetColumnValue("GenProductId", new Guid(_ProductId));
-				_entity.SetColumnValue("ModifiedOn", _now);
-				_entity.Save(true);
+			entity.SetColumnValue("Name", serialName);
+			entity.SetColumnValue("GenProductId", new Guid(productId));
+			entity.SetColumnValue("ModifiedOn", now);
+			entity.Save(true);
 			
-				result = (Guid)_entity.GetColumnValue("Id");
-			}
-			
+			result = (Guid)entity.GetColumnValue("Id");
+
 			return result;
 		}
 		
-		public Guid getCultureId(string _LangCode)
+		public Guid GetCultureId(string langCode)
 		{
-			Guid result = Guid.Empty;
-			Select _selEntity = new Select(UserConnection)
+			var result = Guid.Empty;
+			var selEntity = new Select(UserConnection)
 				.Column("Id").Top(1)
 				.From("SysCulture")
-				.Where("Name").IsLike(Column.Parameter("%"+_LangCode+"%"))
+				.Where("Name").IsLike(Column.Parameter("%"+langCode+"%"))
 			as Select;
 			
-			result = _selEntity.ExecuteScalar<Guid>();
+			result = selEntity.ExecuteScalar<Guid>();
 			return result;
 		}
 	}
@@ -266,7 +261,7 @@ namespace Terrasoft.Configuration.UsrOneCSvcIntegration
 	public class Search
 	{
 		[DataMember(Name = "Id")]
-		public string ID1C { get; set; }
+		public string Id1C { get; set; }
 		[DataMember(Name = "LocalId")]
 		public string LocalId { get; set; }
 		[DataMember(Name = "CreatedFrom")]
