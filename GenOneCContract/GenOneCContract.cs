@@ -1,6 +1,6 @@
-using System.IO;
+ using System.IO;
 
-namespace Terrasoft.Configuration.UsrOneCContract
+namespace Terrasoft.Configuration.GenOneCContract
 {
 	using System.Collections.Generic;
 	using System.ServiceModel;
@@ -20,8 +20,8 @@ namespace Terrasoft.Configuration.UsrOneCContract
 	using Terrasoft.Common;
 	using System.Globalization;
 
-	using Terrasoft.Configuration.UsrIntegrationLogHelper;
-	using Terrasoft.Configuration.UsrOneCSvcIntegration;
+	using Terrasoft.Configuration.GenIntegrationLogHelper;
+	using Terrasoft.Configuration.GenOneCSvcIntegration;
 	
 	[DataContract]
 	public class OneCContract

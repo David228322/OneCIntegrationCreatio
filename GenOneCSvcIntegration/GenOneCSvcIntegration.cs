@@ -1,4 +1,4 @@
-namespace Terrasoft.Configuration.UsrOneCSvcIntegration
+ namespace Terrasoft.Configuration.GenOneCSvcIntegration
 {
 	using System.Collections.Generic;
 	using System.ServiceModel;
@@ -18,11 +18,12 @@ namespace Terrasoft.Configuration.UsrOneCSvcIntegration
 	using Terrasoft.Common;
 	using System.Globalization;
 
-	using Terrasoft.Configuration.UsrIntegrationLogHelper;
+	using Terrasoft.Configuration.GenIntegrationLogHelper;
 	
-	using Terrasoft.Configuration.UsrOneCAccount;
-	using Terrasoft.Configuration.UsrOneCContact;
-	using Terrasoft.Configuration.UsrOneCContract;
+	using Terrasoft.Configuration.GenOneCAccount;
+	using Terrasoft.Configuration.GenOneCContact;
+	using Terrasoft.Configuration.GenOneCContract;
+	using Terrasoft.Configuration.GenOneCProduct;
 	
 	[ServiceContract]
 	[AspNetCompatibilityRequirements(RequirementsMode = AspNetCompatibilityRequirementsMode.Required)]
@@ -63,6 +64,17 @@ namespace Terrasoft.Configuration.UsrOneCSvcIntegration
 			var oneCAccount = new OneCAccount();
 			var result = new List<OneCAccount>();
 			result = oneCAccount.GetItem(account);
+			return result;
+		}
+		
+		[OperationContract]
+		[WebInvoke(Method = "POST", BodyStyle = WebMessageBodyStyle.Bare,
+			RequestFormat = WebMessageFormat.Json, ResponseFormat = WebMessageFormat.Json)]
+		public List<OneCProduct> GetProductInfo(Search search)
+		{
+			var oneCProduct = new OneCProduct();
+			var result = new List<OneCProduct>();
+			result = oneCProduct.GetItem(search);
 			return result;
 		}
 		

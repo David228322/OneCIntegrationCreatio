@@ -1,4 +1,4 @@
-namespace Terrasoft.Configuration.UsrOneCAccount
+ namespace Terrasoft.Configuration.GenOneCAccount
 {
 	using System.Collections.Generic;
 	using System.ServiceModel;
@@ -18,8 +18,8 @@ namespace Terrasoft.Configuration.UsrOneCAccount
 	using Terrasoft.Common;
 	using System.Globalization;
 
-	using Terrasoft.Configuration.UsrIntegrationLogHelper;
-	using Terrasoft.Configuration.UsrOneCSvcIntegration;
+	using Terrasoft.Configuration.GenIntegrationLogHelper;
+	using Terrasoft.Configuration.GenOneCSvcIntegration;
  
 	[DataContract]
 	public class OneCAccount

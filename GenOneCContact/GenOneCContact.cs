@@ -1,4 +1,4 @@
-namespace Terrasoft.Configuration.UsrOneCContact
+namespace Terrasoft.Configuration.GenOneCContact
 {
 	using System.Collections.Generic;
 	using System.ServiceModel;
@@ -18,8 +18,8 @@ namespace Terrasoft.Configuration.UsrOneCContact
 	using Terrasoft.Common;
 	using System.Globalization;
 
-	using Terrasoft.Configuration.UsrIntegrationLogHelper;
-	using Terrasoft.Configuration.UsrOneCSvcIntegration;
+	using Terrasoft.Configuration.GenIntegrationLogHelper;
+	using Terrasoft.Configuration.GenOneCSvcIntegration;
  
 	[DataContract]
 	public class OneCContact

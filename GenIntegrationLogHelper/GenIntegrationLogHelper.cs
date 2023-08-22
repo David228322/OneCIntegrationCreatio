@@ -1,4 +1,4 @@
-namespace Terrasoft.Configuration.UsrIntegrationLogHelper
+ namespace Terrasoft.Configuration.GenIntegrationLogHelper
 {
     using Newtonsoft.Json;
     using System;
