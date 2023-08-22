@@ -18,19 +18,13 @@ namespace Terrasoft.Configuration.GenOneCProduct
     using Common;
     using System.Globalization;
 
-    using Configuration.GenIntegrationLogHelper;
-    using Configuration.GenOneCSvcIntegration;
+    using Terrasoft.Configuration.GenIntegrationLogHelper;
+    using Terrasoft.Configuration.GenOneCSvcIntegration;
+    using Terrasoft.Configuration.OneCBaseEntity;
 
     [DataContract]
-    public class OneCProduct
+    public class OneCProduct : OneCBaseEntity<OneCProduct>
     {
-        [DataMember(Name = "BPMId")]
-        public string LocalId { get; set; }
-        [DataMember(Name = "Id")]
-        public string Id1C { get; set; }
-        [IgnoreDataMember]
-        public Guid BpmId { get; set; }
-
         [DataMember(Name = "LangCode")]
         public string LangCode { get; set; }
 
@@ -49,42 +43,12 @@ namespace Terrasoft.Configuration.GenOneCProduct
         [DataMember(Name = "Currency")]
         public string Currency { get; set; }
 
-        [DataMember(Name = "CreatedOn")]
-        public string CreatedOn { get; set; }
-        [DataMember(Name = "ModifiedOn")]
-        public string ModifiedOn { get; set; }
-
-
-        [IgnoreDataMember]
-        private UserConnection _userConnection;
-        [IgnoreDataMember]
-        public UserConnection UserConnection
-        {
-            get =>
-                _userConnection ??
-                (_userConnection = HttpContext.Current.Session["UserConnection"] as UserConnection);
-            set => _userConnection = value;
-        }
-
         public string ProcessRemoteItem(bool isFull = true)
         {
-            if ((string.IsNullOrEmpty(LocalId) || LocalId == "00000000-0000-0000-0000-000000000000")
-                 && string.IsNullOrEmpty(LangCode))
-            {
-                return BpmId.ToString();
-            }
-            if (BpmId == Guid.Empty)
-            {
-                ResolveRemoteItem();
-            }
-            if (BpmId == Guid.Empty || isFull)
-            {
-                SaveRemoteItem();
-            }
-            return BpmId.ToString();
+            return base.ProcessRemoteItem(isFull);
         }
 
-        public bool ResolveRemoteItem()
+        public override bool ResolveRemoteItem()
         {
             if (string.IsNullOrEmpty(LocalId) && string.IsNullOrEmpty(Id1C))
                 return false;
@@ -103,7 +67,7 @@ namespace Terrasoft.Configuration.GenOneCProduct
             return true;
         }
 
-        private bool SaveRemoteItem()
+        public override bool SaveRemoteItem()
         {
             var success = false;
             var directory = new Directory();
@@ -177,7 +141,7 @@ namespace Terrasoft.Configuration.GenOneCProduct
             return success;
         }
 
-        public List<OneCProduct> GetItem(Search data)
+        public override List<OneCProduct> GetItem(Search data)
         {
             var result = new List<OneCProduct>();
             var date = DateTime.Now;
@@ -253,8 +217,7 @@ namespace Terrasoft.Configuration.GenOneCProduct
                     }
                 }
                 catch (global::System.Exception ex)
-                {
-
+                {                    
                     throw;
                 }
 

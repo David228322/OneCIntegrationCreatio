@@ -83,7 +83,11 @@
 				return false;
 			
 			var entityId = selEntity.ExecuteScalar<Guid>();
-			if (entityId == Guid.Empty) return false;
+			if (entityId == Guid.Empty)
+			{
+                return false;
+            }
+
 			BpmId = entityId;
 			return true;
 		}
