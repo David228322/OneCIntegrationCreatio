@@ -24,8 +24,9 @@
 	using Terrasoft.Configuration.GenOneCContact;
 	using Terrasoft.Configuration.GenOneCContract;
 	using Terrasoft.Configuration.GenOneCProduct;
-	
-	[ServiceContract]
+	using Terrasoft.Configuration.GenOneCOrder;
+
+    [ServiceContract]
 	[AspNetCompatibilityRequirements(RequirementsMode = AspNetCompatibilityRequirementsMode.Required)]
 	public class OneCSvc : BaseService
 	{
@@ -55,8 +56,19 @@
 			
 			return result;
 		}
-		
-		[OperationContract]
+
+        [OperationContract]
+        [WebInvoke(Method = "POST", BodyStyle = WebMessageBodyStyle.Bare,
+            RequestFormat = WebMessageFormat.Json, ResponseFormat = WebMessageFormat.Json)]
+        public List<OneCOrder> GetOrderInfo(Search account)
+        {
+            var oneCOrder = new OneCOrder();
+            var result = new List<OneCOrder>();
+            result = oneCOrder.GetItem(account);
+            return result;
+        }
+
+        [OperationContract]
 		[WebInvoke(Method = "POST", BodyStyle = WebMessageBodyStyle.Bare,
 			RequestFormat = WebMessageFormat.Json, ResponseFormat = WebMessageFormat.Json)]
 		public List<OneCAccount> GetAccountInfo(Search account)

@@ -21,6 +21,7 @@ namespace Terrasoft.Configuration.GenOneCProduct
     using Terrasoft.Configuration.GenIntegrationLogHelper;
     using Terrasoft.Configuration.GenOneCSvcIntegration;
     using Terrasoft.Configuration.OneCBaseEntity;
+    using Terrasoft.Configuration.GenCOrderProduct;
 
     [DataContract]
     public class OneCProduct : OneCBaseEntity<OneCProduct>
@@ -208,10 +209,10 @@ namespace Terrasoft.Configuration.GenOneCProduct
                                 Name = (reader.GetValue(2) != System.DBNull.Value) ? (string)reader.GetValue(2) : "",
                                 Description = (reader.GetValue(3) != System.DBNull.Value) ? (string)reader.GetValue(3) : "",
                                 ShortDescription = (reader.GetValue(4) != System.DBNull.Value) ? (string)reader.GetValue(4).ToString() : "",
-                                Price = (reader.GetValue(4) != System.DBNull.Value) ? (decimal)reader.GetValue(5) : 0,
-                                Type = (reader.GetValue(4) != System.DBNull.Value) ? (string)reader.GetValue(7).ToString() : "",
-                                Currency = (reader.GetValue(4) != System.DBNull.Value) ? (string)reader.GetValue(8).ToString() : "",
-                                Unit = (reader.GetValue(4) != System.DBNull.Value) ? (string)reader.GetValue(6).ToString() : "",
+                                Price = (reader.GetValue(5) != System.DBNull.Value) ? (decimal)reader.GetValue(5) : 0,
+                                Type = (reader.GetValue(6) != System.DBNull.Value) ? (string)reader.GetValue(6).ToString() : "",
+                                Currency = (reader.GetValue(7) != System.DBNull.Value) ? (string)reader.GetValue(7).ToString() : "",
+                                Unit = (reader.GetValue(8) != System.DBNull.Value) ? (string)reader.GetValue(8).ToString() : "",
                             });
                         }
                     }
@@ -244,88 +245,6 @@ namespace Terrasoft.Configuration.GenOneCProduct
             entity.SetColumnValue("GenProductId", productId);
             entity.SetColumnValue("GenAssociatedProductId", BpmId);
             entity.Save(true);
-        }
-    }
-
-    [DataContract]
-    public class OneCOrderProduct
-    {
-        [DataMember(Name = "Id")]
-        public string Id1C { get; set; }
-        [DataMember(Name = "BPMId")]
-        public string LocalId { get; set; }
-        [IgnoreDataMember]
-        public Guid BpmId { get; set; }
-
-        [DataMember(Name = "Id")]
-        public string Id { get; set; }
-        [DataMember(Name = "Name")]
-        public string Name { get; set; }
-        [DataMember(Name = "Price")]
-        public decimal Price { get; set; }
-        [DataMember(Name = "Quantity")]
-        public decimal Quantity { get; set; }
-        [DataMember(Name = "DiscountPercent")]
-        public decimal DiscountPercent { get; set; }
-        [DataMember(Name = "TotalAmount")]
-        public decimal TotalAmount { get; set; }
-        [DataMember(Name = "Unit")]
-        public string Unit { get; set; }
-
-        public Guid ProductId { get; set; }
-        public OneCProduct OneCProduct { get; set; }
-
-        [DataMember(Name = "CreatedOn")]
-        public string CreatedOn { get; set; }
-        [DataMember(Name = "ModifiedOn")]
-        public string ModifiedOn { get; set; }
-
-
-        [IgnoreDataMember]
-        private UserConnection _userConnection;
-        [IgnoreDataMember]
-        public UserConnection UserConnection
-        {
-            get =>
-                _userConnection ??
-                (_userConnection = HttpContext.Current.Session["UserConnection"] as UserConnection);
-            set => _userConnection = value;
-        }
-
-        public string ProcessRemoteItem(bool isFull = true)
-        {
-            if ((string.IsNullOrEmpty(LocalId) || LocalId == "00000000-0000-0000-0000-000000000000"))
-            {
-                return BpmId.ToString();
-            }
-            if (BpmId == Guid.Empty)
-            {
-                ResolveRemoteItem();
-            }
-            if (BpmId == Guid.Empty || isFull)
-            {
-                // SaveRemoteItem();
-            }
-            return BpmId.ToString();
-        }
-
-        public bool ResolveRemoteItem()
-        {
-            if (string.IsNullOrEmpty(LocalId) && string.IsNullOrEmpty(Id1C))
-                return false;
-            var selEntity = new Select(UserConnection)
-                .Column("OrderProduct", "Id").Top(1)
-                .From("Product")
-            as Select;
-            if (!string.IsNullOrEmpty(LocalId))
-                selEntity = selEntity.Where("OrderProduct", "Id").IsEqual(Column.Parameter(new Guid(LocalId))) as Select;
-            else
-                return false;
-
-            var entityId = selEntity.ExecuteScalar<Guid>();
-            if (entityId == Guid.Empty) return false;
-            BpmId = entityId;
-            return true;
         }
     }
 }

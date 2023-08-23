@@ -164,8 +164,8 @@ namespace Terrasoft.Configuration.GenOneCContact
 				.Column("Contact", "Id")
 				.Column("Contact", "GenID1C")
 				.Column("Contact", "Name")
-				.Column("Job", "Name") //
-				.Column("ContactDecisionRole", "Name") //
+				.Column("Job", "Name")
+				.Column("ContactDecisionRole", "Name")
 				.Column("Contact", "ModifiedOn")
 				.From("Contact").As("Contact")
 				.LeftOuterJoin("Job").As("Job")
@@ -203,11 +203,7 @@ namespace Terrasoft.Configuration.GenOneCContact
 				else if (!string.IsNullOrEmpty(data.ModifiedTo)) 
 					selCon = selCon.Where("Contact", "ModifiedOn").IsGreaterOrEqual(Column.Parameter(DateTime.Parse(data.ModifiedTo))) as Select;
 				
-			}	
-			//else if (!string.IsNullOrEmpty(_AccountId)) 
-			//{
-			//	selCon = selCon.Where("Contact", "AccountId").IsEqual(Column.Parameter(new Guid(_AccountId))) as Select;
-			//}
+			}
 			else 
 			{
 				return result;	
