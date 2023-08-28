@@ -83,73 +83,179 @@ namespace Terrasoft.Configuration.GenOneCOrder
             this.BpmId = entityId;
             return true;
         }
-        
+
         public override bool SaveRemoteItem()
         {
             throw new NotImplementedException();
             /*
-            var success = false;
-            Terrasoft.Configuration.GenOneCSvcIntegration.Directory directory = new Terrasoft.Configuration.GenOneCSvcIntegration.Directory();
-            var type = Guid.Empty;
-            var counterparty = Guid.Empty;
-
-            if (!string.IsNullOrEmpty(this.Type))
-            {
-                type = directory.GetId("OrderType", this.Type);
-            }
+            bool success = false;
+            Directory directory = new Directory();
+            Guid _Country = Guid.Empty;
+            Guid _Organization = Guid.Empty;
+            Guid _Counterparty = Guid.Empty;
+            Guid _Contract = Guid.Empty;
+            Guid _Warehouse = Guid.Empty;
+            Guid _BasisAdditionalDiscount = Guid.Empty;
+            Guid _ResponsibleMRK = Guid.Empty;
+            Guid _ResponsibleMAP = Guid.Empty;
+            Guid _ResponsibleMAP2 = Guid.Empty;
 
             if (!string.IsNullOrEmpty(this.CounterpartyLocalId) && directory.СhekId("Account", this.CounterpartyLocalId))
             {
-                counterparty = new Guid(this.CounterpartyLocalId);
+                _Counterparty = new Guid(this.CounterpartyLocalId);
             }
 
-            var entity = UserConnection.EntitySchemaManager
+            if (!string.IsNullOrEmpty(this.ContractLocalId) && directory.СhekId("Contract", this.ContractLocalId))
+            {
+                _Contract = new Guid(this.ContractLocalId);
+            }
+
+            if (!string.IsNullOrEmpty(this.Warehouse))
+            {
+                _Warehouse = directory.GetId("Warehouse", this.Warehouse);
+            }
+
+            if (!string.IsNullOrEmpty(this.ResponsibleMRKLocalId) && directory.СhekId("Contact", this.ResponsibleMRKLocalId))
+            {
+                _ResponsibleMRK = new Guid(this.ResponsibleMRKLocalId);
+            }
+
+            if (!string.IsNullOrEmpty(this.ResponsibleMAPLocalId) && directory.СhekId("Contact", this.ResponsibleMAPLocalId))
+            {
+                _ResponsibleMAP = new Guid(this.ResponsibleMAPLocalId);
+            }
+
+            if (!string.IsNullOrEmpty(this.ResponsibleMAP2LocalId) && directory.СhekId("Contact", this.ResponsibleMAP2LocalId))
+            {
+                _ResponsibleMAP2 = new Guid(this.ResponsibleMAP2LocalId);
+            }
+
+            var _entity = UserConnection.EntitySchemaManager
                 .GetInstanceByName("Order").CreateEntity(UserConnection);
+            var _now = DateTime.Now;
 
-            if (this.BpmId == Guid.Empty)
+            if (this.BPMId == Guid.Empty)
             {
-                entity.SetDefColumnValues();
+                _entity.SetDefColumnValues();
             }
-            else if (!entity.FetchFromDB(entity.Schema.PrimaryColumn.Name, this.BpmId))
+            else if (!_entity.FetchFromDB(_entity.Schema.PrimaryColumn.Name, base.BpmId))
             {
-                entity.SetDefColumnValues();
+                _entity.SetDefColumnValues();
             }
 
-            if (!string.IsNullOrEmpty(this.Id1C))
+            if (!string.IsNullOrEmpty(base.Id1C))
             {
-                entity.SetColumnValue("GenID1C", this.Id1C);
+                _entity.SetColumnValue("GenID1C", base.Id1C);
             }
 
             if (!string.IsNullOrEmpty(this.Number))
             {
-                entity.SetColumnValue("Number", this.Number);
+                _entity.SetColumnValue("Number", this.Number);
             }
 
-            if (type != Guid.Empty)
+            if (_Counterparty != Guid.Empty)
             {
-                entity.SetColumnValue("TypeId", type);
+                _entity.SetColumnValue("AccountId", _Counterparty);
             }
 
-            if (counterparty != Guid.Empty)
+            if (!string.IsNullOrEmpty(this.Comment))
             {
-                entity.SetColumnValue("AccountId", counterparty);
+                _entity.SetColumnValue("Comment", this.Comment);
             }
 
-            entity.SetColumnValue("ModifiedOn", DateTime.Now);
-
-            if (entity.StoringState == StoringObjectState.Changed || this.BpmId == Guid.Empty)
+            if (_ResponsibleMRK != Guid.Empty)
             {
-                success = entity.Save(true);
+                _entity.SetColumnValue("OwnerId", _ResponsibleMRK);
+            }
+
+            if (this.Amount > 0)
+            {
+                _entity.SetColumnValue("Amount", this.Amount);
+            }
+
+            if (_entity.StoringState == StoringObjectState.Changed || this.BPMId == Guid.Empty)
+            {
+                _entity.SetColumnValue("ModifiedOn", _now);
+                success = _entity.Save(true);
             }
             else
             {
                 success = true;
             }
-            this.BpmId = (Guid)entity.GetColumnValue("Id");
-            return success; */
+            this.BPMId = (Guid)_entity.GetColumnValue("Id");
+            this.DateModified = _now.ToString();
+
+            
+            if (this.BPMId != Guid.Empty)
+            {
+                if (this.Products != null && this.Products.Count > 0)
+                {
+                    List<string> _products = directory.GetList(this.BPMId.ToString(), "OrderId", "GenID1C", "OrderProduct");
+                    if (_products != null && _products.Count > 0)
+                    {
+                        foreach (string _productId in _products)
+                        {
+
+                            if (this.Products.Exists(x => x.ID1C == _productId) == false)
+                            {
+                                directory.delItem(_productId, "GenID1C", this.BPMId.ToString(), "OrderId", "OrderProduct");
+                            }
+                        }
+                    }
+
+                    foreach (var product in this.Products)
+                    {
+                        product.OrderId = this.BPMId;
+                        product.ProcessRemoteItem();
+                    }
+                }
+
+                if (this.AdditionalServices != null && this.AdditionalServices.Count > 0)
+                {
+                    List<string> _additionServices = directory.GetList(this.BPMId.ToString(), "GenOrderId", "GenID1C", "GenAdditionalServices");
+                    if (_additionServices != null && _additionServices.Count > 0)
+                    {
+                        foreach (string _additionServiceId in _additionServices)
+                        {
+
+                            if (this.AdditionalServices.Exists(x => x.ID1C == _additionServiceId) == false)
+                            {
+                                directory.delItem(_additionServiceId, "GenID1C", this.BPMId.ToString(), "GenOrderId", "GenAdditionalServices");
+                            }
+                        }
+                    }
+
+                    foreach (var service in this.AdditionalServices)
+                    {
+                        service.OrderId = this.BPMId;
+                        service.ProcessRemoteItem();
+                    }
+                }
+
+                if (this.AutomaticDiscount != null && this.AutomaticDiscount.Count > 0)
+                {
+                    foreach (var discount in this.AutomaticDiscount)
+                    {
+                        discount.OrderId = this.BPMId;
+                        discount.ProcessRemoteItem();
+                    }
+                }
+
+                if (this.OrderPaid != null && this.OrderPaid.Count > 0)
+                {
+                    foreach (var paid in this.OrderPaid)
+                    {
+                        paid.OrderLocalId = this.BPMId.ToString();
+                        paid.ProcessRemoteItem();
+                    }
+                }
+            }
+            
+            return success;
+            */
         }
 
-        public override List<OneCOrder> GetItem(Search data)
+        public override List<OneCOrder> GetItem(SearchFilter data)
         {
             var result = new List<OneCOrder>();
             var date = DateTime.Now;
@@ -222,7 +328,7 @@ namespace Terrasoft.Configuration.GenOneCOrder
             var orderProducts = new OneCOrderProduct();
             foreach (var order in result)
             {
-                order.OrderProducts = orderProducts.GetItem(order.LocalId);
+                order.OrderProducts = orderProducts.GetAllByOrderId(order.LocalId);
             }
 
             return result;

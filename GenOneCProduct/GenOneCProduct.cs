@@ -142,7 +142,7 @@ namespace Terrasoft.Configuration.GenOneCProduct
             return success;
         }
 
-        public override List<OneCProduct> GetItem(Search data)
+        public override List<OneCProduct> GetItem(SearchFilter data)
         {
             var result = new List<OneCProduct>();
             var date = DateTime.Now;

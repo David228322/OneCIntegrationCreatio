@@ -37,6 +37,8 @@ namespace Terrasoft.Configuration.OneCBaseEntity
         [DataMember(Name = "ModifiedOn")]
         public string ModifiedOn { get; set; }
 
+        [IgnoreDataMember]
+        public string Entity => typeof(T).Name.Replace("OneC", "");
 
         [IgnoreDataMember]
         private UserConnection _userConnection;
@@ -48,6 +50,10 @@ namespace Terrasoft.Configuration.OneCBaseEntity
                 (_userConnection = HttpContext.Current.Session["UserConnection"] as UserConnection);
             set => _userConnection = value;
         }
+
+        public abstract bool SaveRemoteItem();
+        public abstract List<T> GetItem(SearchFilter searchFilter);
+        public abstract bool ResolveRemoteItem();
 
         public string ProcessRemoteItem(bool isFull = true)
         {
@@ -66,10 +72,72 @@ namespace Terrasoft.Configuration.OneCBaseEntity
             return BpmId.ToString();
         }
 
-        public abstract bool ResolveRemoteItem();
+        protected Select GetItemByFilters(Select selectQuery, SearchFilter searchFilters)
+        {
+            if (!string.IsNullOrEmpty(searchFilters.Id1C))
+            {
+                selectQuery = selectQuery.Where(Entity, "GenID1C").IsEqual(Column.Parameter(searchFilters.Id1C)) as Select;
+            }
+            else if (!string.IsNullOrEmpty(searchFilters.LocalId))
+            {
+                selectQuery = selectQuery.Where(Entity, "Id").IsEqual(Column.Parameter(new Guid(searchFilters.LocalId))) as Select;
+            }
+            else if (!string.IsNullOrEmpty(searchFilters.CreatedFrom) || !string.IsNullOrEmpty(searchFilters.CreatedTo))
+            {
+                if (!string.IsNullOrEmpty(searchFilters.CreatedFrom))
+                {
+                    selectQuery = selectQuery.Where(Entity, "CreatedOn").IsLessOrEqual(Column.Parameter(DateTime.Parse(searchFilters.CreatedFrom))) as Select;
+                }
+                if (!string.IsNullOrEmpty(searchFilters.CreatedTo))
+                {
+                    selectQuery = selectQuery.And(Entity, "CreatedOn").IsGreaterOrEqual(Column.Parameter(DateTime.Parse(searchFilters.CreatedTo))) as Select;
+                }
+            }
+            else if (!string.IsNullOrEmpty(searchFilters.ModifiedFrom) || !string.IsNullOrEmpty(searchFilters.ModifiedTo))
+            {
+                if (!string.IsNullOrEmpty(searchFilters.ModifiedFrom))
+                {
+                    selectQuery = selectQuery.Where(Entity, "ModifiedOn").IsLessOrEqual(Column.Parameter(DateTime.Parse(searchFilters.ModifiedFrom))) as Select;
+                }
+                if (!string.IsNullOrEmpty(searchFilters.ModifiedTo))
+                {
+                    selectQuery = selectQuery.And(Entity, "ModifiedOn").IsGreaterOrEqual(Column.Parameter(DateTime.Parse(searchFilters.ModifiedTo))) as Select;
+                }
+            }
 
-        public abstract bool SaveRemoteItem();
+            return selectQuery;
+        }
 
-        public abstract List<T> GetItem(Search data);
+        protected bool ResolveRemoteItemByQuery(Select selectQuery)
+        {
+            if (string.IsNullOrEmpty(LocalId) && string.IsNullOrEmpty(Id1C))
+            {
+                return false;
+            }
+
+            var success = false;
+
+            if (!string.IsNullOrEmpty(LocalId))
+            {
+                selectQuery.And(Entity, "Id").IsEqual(Column.Parameter(new Guid(LocalId)));
+            }
+            else if (!string.IsNullOrEmpty(Id1C))
+            {
+                selectQuery.And(Entity, "GenID1C").IsEqual(Column.Parameter(Id1C));
+            }
+            else
+            {
+                return false;
+            }
+
+            var entityId = selectQuery.ExecuteScalar<Guid>();
+            if (entityId != Guid.Empty)
+            {
+                BpmId = entityId;
+                success = true;
+            }
+
+            return success;
+        }
     }
 }

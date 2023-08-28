@@ -158,7 +158,7 @@
 			return success;
 		}
 		
-		public List<OneCAccount> GetItem(Search data)
+		public List<OneCAccount> GetItem(SearchFilter data)
 		{
 			var result = new List<OneCAccount>();
 			var addres = new AccountAddres();

@@ -156,7 +156,7 @@ namespace Terrasoft.Configuration.GenOneCContact
 			return success;
 		}
 		
-		public List<OneCContact> GetItem(Search data)
+		public List<OneCContact> GetItem(SearchFilter data)
 		{
 			var result = new List<OneCContact>();
 			

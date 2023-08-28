@@ -150,7 +150,7 @@ namespace Terrasoft.Configuration.GenOneCContract
 			return success;
 		}
 		
-		public List<OneCContract> GetItem(Search data)
+		public List<OneCContract> GetItem(SearchFilter data)
 		{
 			var result = new List<OneCContract>();
 			var date = DateTime.Now;
