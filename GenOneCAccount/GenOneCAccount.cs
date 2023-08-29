@@ -20,8 +20,9 @@
 
 	using Terrasoft.Configuration.GenIntegrationLogHelper;
 	using Terrasoft.Configuration.GenOneCSvcIntegration;
- 
-	[DataContract]
+	using Terrasoft.Configuration.GenOneCIntegrationHelper;
+
+    [DataContract]
 	public class OneCAccount
 	{
 		[DataMember(Name = "Id")]
@@ -95,11 +96,11 @@
 		private bool SaveRemoteItem()
 		{
 			var success = false;
-			var directory = new Directory();
+			var oneCHelper = new OneCIntegrationHelper();
 		
 			var owner = Guid.Empty;
 			
-			if (directory.СhekId("Contact", OwnerLocalId))
+			if (oneCHelper.СhekId("Contact", OwnerLocalId))
 			{
 				owner = new Guid(OwnerLocalId);
 			}

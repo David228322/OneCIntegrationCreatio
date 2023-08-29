@@ -21,6 +21,7 @@ namespace Terrasoft.Configuration.GenCOrderProduct
     using Terrasoft.Configuration.GenIntegrationLogHelper;
     using Terrasoft.Configuration.GenOneCSvcIntegration;
     using Terrasoft.Configuration.OneCBaseEntity;
+    using Terrasoft.Configuration.GenOneCIntegrationHelper;
 
     [DataContract]
     public class OneCOrderProduct : OneCBaseEntity<OneCOrderProduct>
@@ -69,9 +70,9 @@ namespace Terrasoft.Configuration.GenCOrderProduct
                 return false;
             }
 
-            Directory directory = new Directory();
+            var oneCHelper = new OneCIntegrationHelper();
 
-            if (!directory.ÑhekId("Product", ProductId.ToString()))
+            if (!oneCHelper.ÑhekId("Product", ProductId.ToString()))
             {
                 return false;
             }
@@ -81,7 +82,7 @@ namespace Terrasoft.Configuration.GenCOrderProduct
 
             if (!string.IsNullOrEmpty(Unit))
             {
-                unitId = directory.GetId("Unit", Unit);
+                unitId = oneCHelper.GetId("Unit", Unit);
             }
 
             if (!string.IsNullOrEmpty(Currency))
@@ -90,7 +91,7 @@ namespace Terrasoft.Configuration.GenCOrderProduct
                 {
                     Currency = "UAH";
                 }
-                currencyId = directory.GetId("Currency", Currency, "ShortName");
+                currencyId = oneCHelper.GetId("Currency", Currency, "ShortName");
             }
 
             var entitySchema = UserConnection.EntitySchemaManager.GetInstanceByName("OrderProduct");

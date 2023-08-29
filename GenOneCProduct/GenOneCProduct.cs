@@ -22,6 +22,7 @@ namespace Terrasoft.Configuration.GenOneCProduct
     using Terrasoft.Configuration.GenOneCSvcIntegration;
     using Terrasoft.Configuration.OneCBaseEntity;
     using Terrasoft.Configuration.GenCOrderProduct;
+    using Terrasoft.Configuration.GenOneCIntegrationHelper;
 
     [DataContract]
     public class OneCProduct : OneCBaseEntity<OneCProduct>
@@ -71,7 +72,7 @@ namespace Terrasoft.Configuration.GenOneCProduct
         public override bool SaveRemoteItem()
         {
             var success = false;
-            var directory = new Directory();
+            var oneCHelper = new OneCIntegrationHelper();
             var unit = Guid.Empty;
             var residueStorageUnit = Guid.Empty;
             var reportingUnit = Guid.Empty;
@@ -82,12 +83,12 @@ namespace Terrasoft.Configuration.GenOneCProduct
 
             if (!string.IsNullOrEmpty(Unit))
             {
-                unit = directory.GetId("Unit", Unit);
+                unit = oneCHelper.GetId("Unit", Unit);
             }
 
             if (!string.IsNullOrEmpty(Type))
             {
-                type = directory.GetId("ProductType", Type);
+                type = oneCHelper.GetId("ProductType", Type);
             }
 
             var entity = UserConnection.EntitySchemaManager

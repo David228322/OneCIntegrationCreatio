@@ -20,8 +20,9 @@ namespace Terrasoft.Configuration.GenOneCContact
 
 	using Terrasoft.Configuration.GenIntegrationLogHelper;
 	using Terrasoft.Configuration.GenOneCSvcIntegration;
- 
-	[DataContract]
+	using Terrasoft.Configuration.GenOneCIntegrationHelper;
+
+    [DataContract]
 	public class OneCContact
 	{
 		[DataMember(Name = "Id")]
@@ -92,18 +93,18 @@ namespace Terrasoft.Configuration.GenOneCContact
 		private bool SaveRemoteItem()
 		{
 			var success = false;
-			var directory = new Directory();
+			var oneCHelper = new OneCIntegrationHelper();
 			var job = Guid.Empty;
 			var decisionRole = Guid.Empty;
 			
 			if (!string.IsNullOrEmpty(this.Job))
 			{
-				job = directory.GetId("Job", this.Job);
+				job = oneCHelper.GetId("Job", this.Job);
 			}
 			
 			if (!string.IsNullOrEmpty(this.DecisionRole))
 			{
-				decisionRole = directory.GetId("ContactDecisionRole", this.DecisionRole);
+				decisionRole = oneCHelper.GetId("ContactDecisionRole", this.DecisionRole);
 			}
 
 			var entity = UserConnection.EntitySchemaManager

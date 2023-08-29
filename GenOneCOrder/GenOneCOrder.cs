@@ -24,6 +24,7 @@ namespace Terrasoft.Configuration.GenOneCOrder
     using Terrasoft.Configuration.GenOneCProduct;
     using Terrasoft.Configuration.OneCBaseEntity;
     using Terrasoft.Configuration.GenCOrderProduct;
+    using Terrasoft.Configuration.GenOneCIntegrationHelper;
 
     [DataContract]
     public class OneCOrder : OneCBaseEntity<OneCOrder>
@@ -40,6 +41,8 @@ namespace Terrasoft.Configuration.GenOneCOrder
         public string DeliveryAddress { get; set; }
         [DataMember(Name = "OrderStatus")]
         public string OrderStatus { get; set; }
+        [DataMember(Name = "Comment")]
+        public string Comment { get; set; }
 
         [DataMember(Name = "OrderProducts")]
         public List<OneCOrderProduct> OrderProducts { get; set; }
@@ -85,14 +88,15 @@ namespace Terrasoft.Configuration.GenOneCOrder
         }
 
         public override bool SaveRemoteItem()
-        {
+        {     
+            //TODO: Realize this method
             throw new NotImplementedException();
             /*
             bool success = false;
-            Directory directory = new Directory();
+            var oneCHelper = new OneCIntegrationHelper();
             Guid _Country = Guid.Empty;
             Guid _Organization = Guid.Empty;
-            Guid _Counterparty = Guid.Empty;
+            Guid counterParty = Guid.Empty;
             Guid _Contract = Guid.Empty;
             Guid _Warehouse = Guid.Empty;
             Guid _BasisAdditionalDiscount = Guid.Empty;
@@ -100,41 +104,11 @@ namespace Terrasoft.Configuration.GenOneCOrder
             Guid _ResponsibleMAP = Guid.Empty;
             Guid _ResponsibleMAP2 = Guid.Empty;
 
-            if (!string.IsNullOrEmpty(this.CounterpartyLocalId) && directory.СhekId("Account", this.CounterpartyLocalId))
-            {
-                _Counterparty = new Guid(this.CounterpartyLocalId);
-            }
-
-            if (!string.IsNullOrEmpty(this.ContractLocalId) && directory.СhekId("Contract", this.ContractLocalId))
-            {
-                _Contract = new Guid(this.ContractLocalId);
-            }
-
-            if (!string.IsNullOrEmpty(this.Warehouse))
-            {
-                _Warehouse = directory.GetId("Warehouse", this.Warehouse);
-            }
-
-            if (!string.IsNullOrEmpty(this.ResponsibleMRKLocalId) && directory.СhekId("Contact", this.ResponsibleMRKLocalId))
-            {
-                _ResponsibleMRK = new Guid(this.ResponsibleMRKLocalId);
-            }
-
-            if (!string.IsNullOrEmpty(this.ResponsibleMAPLocalId) && directory.СhekId("Contact", this.ResponsibleMAPLocalId))
-            {
-                _ResponsibleMAP = new Guid(this.ResponsibleMAPLocalId);
-            }
-
-            if (!string.IsNullOrEmpty(this.ResponsibleMAP2LocalId) && directory.СhekId("Contact", this.ResponsibleMAP2LocalId))
-            {
-                _ResponsibleMAP2 = new Guid(this.ResponsibleMAP2LocalId);
-            }
-
             var _entity = UserConnection.EntitySchemaManager
                 .GetInstanceByName("Order").CreateEntity(UserConnection);
-            var _now = DateTime.Now;
+            var now = DateTime.Now;
 
-            if (this.BPMId == Guid.Empty)
+            if (base.BpmId == Guid.Empty)
             {
                 _entity.SetDefColumnValues();
             }
@@ -153,9 +127,9 @@ namespace Terrasoft.Configuration.GenOneCOrder
                 _entity.SetColumnValue("Number", this.Number);
             }
 
-            if (_Counterparty != Guid.Empty)
+            if (counterParty != Guid.Empty)
             {
-                _entity.SetColumnValue("AccountId", _Counterparty);
+                _entity.SetColumnValue("AccountId", counterParty);
             }
 
             if (!string.IsNullOrEmpty(this.Comment))
@@ -175,7 +149,7 @@ namespace Terrasoft.Configuration.GenOneCOrder
 
             if (_entity.StoringState == StoringObjectState.Changed || this.BPMId == Guid.Empty)
             {
-                _entity.SetColumnValue("ModifiedOn", _now);
+                _entity.SetColumnValue("ModifiedOn", now);
                 success = _entity.Save(true);
             }
             else
@@ -183,22 +157,22 @@ namespace Terrasoft.Configuration.GenOneCOrder
                 success = true;
             }
             this.BPMId = (Guid)_entity.GetColumnValue("Id");
-            this.DateModified = _now.ToString();
+            this.DateModified = now.ToString();
 
             
             if (this.BPMId != Guid.Empty)
             {
                 if (this.Products != null && this.Products.Count > 0)
                 {
-                    List<string> _products = directory.GetList(this.BPMId.ToString(), "OrderId", "GenID1C", "OrderProduct");
+                    List<string> _products = oneCHelper.GetList(this.BPMId.ToString(), "OrderId", "GenID1C", "OrderProduct");
                     if (_products != null && _products.Count > 0)
                     {
                         foreach (string _productId in _products)
                         {
 
-                            if (this.Products.Exists(x => x.ID1C == _productId) == false)
+                            if (this.Products.Exists(x => x.Id1C == _productId) == false)
                             {
-                                directory.delItem(_productId, "GenID1C", this.BPMId.ToString(), "OrderId", "OrderProduct");
+                                oneCHelper.delItem(_productId, "GenID1C", this.BPMId.ToString(), "OrderId", "OrderProduct");
                             }
                         }
                     }
@@ -212,7 +186,7 @@ namespace Terrasoft.Configuration.GenOneCOrder
 
                 if (this.AdditionalServices != null && this.AdditionalServices.Count > 0)
                 {
-                    List<string> _additionServices = directory.GetList(this.BPMId.ToString(), "GenOrderId", "GenID1C", "GenAdditionalServices");
+                    List<string> _additionServices = oneCHelper.GetList(this.BPMId.ToString(), "GenOrderId", "GenID1C", "GenAdditionalServices");
                     if (_additionServices != null && _additionServices.Count > 0)
                     {
                         foreach (string _additionServiceId in _additionServices)
@@ -220,7 +194,7 @@ namespace Terrasoft.Configuration.GenOneCOrder
 
                             if (this.AdditionalServices.Exists(x => x.ID1C == _additionServiceId) == false)
                             {
-                                directory.delItem(_additionServiceId, "GenID1C", this.BPMId.ToString(), "GenOrderId", "GenAdditionalServices");
+                                oneCHelper.delItem(_additionServiceId, "GenID1C", this.BPMId.ToString(), "GenOrderId", "GenAdditionalServices");
                             }
                         }
                     }
@@ -255,7 +229,7 @@ namespace Terrasoft.Configuration.GenOneCOrder
             */
         }
 
-        public override List<OneCOrder> GetItem(SearchFilter data)
+        public override List<OneCOrder> GetItem(SearchFilter searchFilter)
         {
             var result = new List<OneCOrder>();
             var date = DateTime.Now;
@@ -268,42 +242,12 @@ namespace Terrasoft.Configuration.GenOneCOrder
                 .Column("Order", "PaymentAmount")
                 .Column("Order", "DeliveryAddress")
                 .Column("OrderStatus", "Name").As("OrderStatusName")
+                .Column("Comment")
                 .From("Order")
                 .LeftOuterJoin("OrderStatus").On("Order", "StatusId").IsEqual("OrderStatus", "Id")
             as Select;
 
-            if (!string.IsNullOrEmpty(data.Id1C) || !string.IsNullOrEmpty(data.LocalId))
-            {
-                if (!string.IsNullOrEmpty(data.LocalId))
-                    selCon = selCon.Where("Order", "Id").IsEqual(Column.Parameter(new Guid(data.LocalId))) as Select;
-                else if (!string.IsNullOrEmpty(data.Id1C))
-                    selCon = selCon.Where("Order", "GenID1C").IsEqual(Column.Parameter(data.Id1C)) as Select;
-
-            }
-            else if (!string.IsNullOrEmpty(data.CreatedFrom) || !string.IsNullOrEmpty(data.CreatedTo))
-            {
-                if (!string.IsNullOrEmpty(data.CreatedFrom))
-                    selCon = selCon.Where("Order", "CreatedOn").IsLessOrEqual(Column.Parameter(DateTime.Parse(data.CreatedFrom))) as Select;
-                else if (!string.IsNullOrEmpty(data.CreatedFrom) && !string.IsNullOrEmpty(data.CreatedTo))
-                    selCon = selCon.And("Order", "CreatedOn").IsGreaterOrEqual(Column.Parameter(DateTime.Parse(data.CreatedTo))) as Select;
-                else if (!string.IsNullOrEmpty(data.CreatedTo))
-                    selCon = selCon.Where("Order", "CreatedOn").IsGreaterOrEqual(Column.Parameter(DateTime.Parse(data.CreatedTo))) as Select;
-
-            }
-            else if (!string.IsNullOrEmpty(data.ModifiedFrom) || !string.IsNullOrEmpty(data.ModifiedTo))
-            {
-                if (!string.IsNullOrEmpty(data.ModifiedFrom))
-                    selCon = selCon.Where("Order", "ModifiedOn").IsLessOrEqual(Column.Parameter(DateTime.Parse(data.ModifiedFrom))) as Select;
-                else if (!string.IsNullOrEmpty(data.ModifiedFrom) && !string.IsNullOrEmpty(data.ModifiedTo))
-                    selCon = selCon.And("Order", "ModifiedOn").IsGreaterOrEqual(Column.Parameter(DateTime.Parse(data.ModifiedTo))) as Select;
-                else if (!string.IsNullOrEmpty(data.ModifiedTo))
-                    selCon = selCon.Where("Order", "ModifiedOn").IsGreaterOrEqual(Column.Parameter(DateTime.Parse(data.ModifiedTo))) as Select;
-
-            }	
-            else
-            {
-                return result;
-            }
+            selCon = base.GetItemByFilters(selCon, searchFilter);
 
             using (var dbExecutor = UserConnection.EnsureDBConnection())
             {
@@ -320,6 +264,7 @@ namespace Terrasoft.Configuration.GenOneCOrder
                             PaymentAmount = (reader.GetValue(4) != System.DBNull.Value) ? decimal.Parse(reader.GetValue(4).ToString()) : 0,
                             DeliveryAddress = (reader.GetValue(5) != System.DBNull.Value) ? (string)reader.GetValue(5) : "",
                             OrderStatus = (reader.GetValue(6) != System.DBNull.Value) ? (string)reader.GetValue(6) : "",
+                            Comment = (reader.GetValue(7) != System.DBNull.Value) ? (string)reader.GetValue(7) : "",
                         });
                     }
                 }

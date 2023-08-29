@@ -25,6 +25,7 @@ namespace Terrasoft.Configuration.GenOneCSvcIntegration
     using Terrasoft.Configuration.GenOneCContract;
     using Terrasoft.Configuration.GenOneCProduct;
     using Terrasoft.Configuration.GenOneCOrder;
+    using Terrasoft.Configuration.GenOneCInvoice;
 
     [ServiceContract]
     [AspNetCompatibilityRequirements(RequirementsMode = AspNetCompatibilityRequirementsMode.Required)]
@@ -87,6 +88,17 @@ namespace Terrasoft.Configuration.GenOneCSvcIntegration
             var oneCProduct = new OneCProduct();
             var result = new List<OneCProduct>();
             result = oneCProduct.GetItem(search);
+            return result;
+        }
+
+        [OperationContract]
+        [WebInvoke(Method = "POST", BodyStyle = WebMessageBodyStyle.Bare,
+            RequestFormat = WebMessageFormat.Json, ResponseFormat = WebMessageFormat.Json)]
+        public List<OneCInvoice> GetInvoiceInfo(SearchFilter search)
+        {
+            OneCInvoice invoice = new OneCInvoice();
+            List<OneCInvoice> result = new List<OneCInvoice>();
+            result = invoice.GetItem(search);
             return result;
         }
 
@@ -167,117 +179,6 @@ namespace Terrasoft.Configuration.GenOneCSvcIntegration
             var result = new List<OneCContract>();
             var oneCContract = new OneCContract();
             result = oneCContract.GetItem(contract);
-            return result;
-        }
-    }
-
-    public class Directory
-    {
-        [IgnoreDataMember]
-        private UserConnection _userConnection;
-        [IgnoreDataMember]
-        public UserConnection UserConnection
-        {
-            get =>
-                _userConnection ??
-                (_userConnection = HttpContext.Current.Session["UserConnection"] as UserConnection);
-            set => _userConnection = value;
-        }
-
-        public Guid GetId(string schemaName, string name, string columnName = "Name")
-        {
-            var result = Guid.Empty;
-            var selEntity = new Select(UserConnection)
-                .Column("Id").Top(1)
-                .From(schemaName)
-                .Where(columnName).IsLike(Column.Parameter("%" + name + "%"))
-            as Select;
-
-            result = selEntity.ExecuteScalar<Guid>();
-
-            if (result == Guid.Empty && columnName == "Name")
-            {
-                var entity = UserConnection.EntitySchemaManager
-                .GetInstanceByName(schemaName).CreateEntity(UserConnection);
-                var now = DateTime.Now;
-
-                entity.SetDefColumnValues();
-
-                entity.SetColumnValue("Name", name);
-                entity.SetColumnValue("ModifiedOn", now);
-                entity.Save(true);
-
-                result = (Guid)entity.GetColumnValue("Id");
-            }
-
-            return result;
-        }
-
-        public bool СhekId(string schemaName, string id = "", string name = "")
-        {
-            var result = false;
-            var guidId = Guid.Empty;
-            var selEntity = new Select(UserConnection)
-                    .Column("Id").Top(1)
-                    .From(schemaName)
-                as Select;
-
-            if (!string.IsNullOrEmpty(id))
-                selEntity = selEntity.Where("Id").IsEqual(Column.Parameter(new Guid(id))) as Select;
-            else if (!string.IsNullOrEmpty(name))
-                selEntity = selEntity.Where("Name").IsLike(Column.Parameter("%" + name + "%")) as Select;
-            else
-                return false;
-
-            guidId = selEntity.ExecuteScalar<Guid>();
-
-            if (guidId != Guid.Empty)
-            {
-                result = true;
-            }
-
-            return result;
-        }
-
-        public Guid GetSerialId(string productId, string serialName)
-        {
-            var result = Guid.Empty;
-            var selEntity = new Select(UserConnection)
-                .Column("Id").Top(1)
-                .From("GenSerial")
-                .Where("GenProductId").IsEqual(Column.Parameter(new Guid(productId)))
-                .And("Name").IsLike(Column.Parameter("%" + serialName + "%"))
-            as Select;
-
-            result = selEntity.ExecuteScalar<Guid>();
-
-            if (result != Guid.Empty) return result;
-            var entity = UserConnection.EntitySchemaManager
-                .GetInstanceByName("GenSerial").CreateEntity(UserConnection);
-            var now = DateTime.Now;
-
-            entity.SetDefColumnValues();
-
-            entity.SetColumnValue("Name", serialName);
-            entity.SetColumnValue("GenProductId", new Guid(productId));
-            entity.SetColumnValue("ModifiedOn", now);
-            entity.Save(true);
-
-            result = (Guid)entity.GetColumnValue("Id");
-
-            return result;
-        }
-
-        public Guid GetCultureId(string langCode)
-        {
-            var result = Guid.Empty;
-            var selEntity = new Select(UserConnection)
-                .Column("Id").Top(1)
-                .From("SysCulture")
-                .Where("Name").IsLike(Column.Parameter("%" + langCode + "%"))
-            as Select;
-
-            result = selEntity.ExecuteScalar<Guid>();
             return result;
         }
     }
