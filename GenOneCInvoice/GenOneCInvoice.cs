@@ -23,6 +23,7 @@ namespace Terrasoft.Configuration.GenOneCInvoice
     using Terrasoft.Configuration.GenOneCSvcIntegration;
     using Terrasoft.Configuration.GenOneCIntegrationHelper;
     using Terrasoft.Configuration.OneCBaseEntity;
+    using Terrasoft.Configuration.GenOneCInvoiceProduct;
 
     [DataContract]
     public class OneCInvoice : OneCBaseEntity<OneCInvoice>
@@ -55,8 +56,9 @@ namespace Terrasoft.Configuration.GenOneCInvoice
         [DataMember(Name = "Currency")]
         public string Currency { get; set; }
 
-        /* [DataMember(Name = "Products")]
+        [DataMember(Name = "Products")]
         public List<OneCInvoiceProduct> Products { get; set; }
+        /*
         [DataMember(Name = "AdditionalServices")]
         public List<OneCInvoiceAdditionalServices> AdditionalServices { get; set; }
         [DataMember(Name = "AutomaticDiscount")]
@@ -303,7 +305,7 @@ namespace Terrasoft.Configuration.GenOneCInvoice
         public override List<OneCInvoice> GetItem(SearchFilter searchFilter)
         {
             List<OneCInvoice> result = new List<OneCInvoice>();
-            /* OneCInvoiceProduct _products = new OneCInvoiceProduct();
+            /*
              OneCInvoiceAdditionalServices _additionalServices = new OneCInvoiceAdditionalServices();
              OneCInvoiceAutomaticDiscount _automaticDiscount = new OneCInvoiceAutomaticDiscount();
              OneCInvoicePaid _invoicePaid = new OneCInvoicePaid(); */
@@ -371,16 +373,17 @@ namespace Terrasoft.Configuration.GenOneCInvoice
                     }
                 }
             }
+
             //TODO: Get Products, AdditionalServices, AutomaticDiscount, InvoicePaid
-            /*
+            OneCInvoiceProduct invoiceProducts = new OneCInvoiceProduct();
             foreach (var inv in result)
             {
-                inv.Products = _products.getItem(inv.LocalId);
-                inv.AdditionalServices = _additionalServices.getItem(inv.LocalId);
+                inv.Products = invoiceProducts.GetItem(inv.LocalId);
+               /* inv.AdditionalServices = _additionalServices.getItem(inv.LocalId);
                 inv.AutomaticDiscount = _automaticDiscount.getItem(inv.LocalId);
-                inv.InvoicePaid = _invoicePaid.getItem(inv.LocalId);
+                inv.InvoicePaid = _invoicePaid.getItem(inv.LocalId); */
             }
-            */
+            
             return result;
         }
     }

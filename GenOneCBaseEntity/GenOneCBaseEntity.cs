@@ -20,6 +20,7 @@ namespace Terrasoft.Configuration.OneCBaseEntity
 
     using Configuration.GenIntegrationLogHelper;
     using Configuration.GenOneCSvcIntegration;
+    using Terrasoft.Configuration.OneCBaseEntity;
 
     [DataContract]
     public abstract class OneCBaseEntity<T>

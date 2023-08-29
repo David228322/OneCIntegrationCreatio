@@ -222,7 +222,10 @@ namespace Terrasoft.Configuration.GenCOrderProduct
                     .LeftOuterJoin("Unit").On("OrderProduct", "UnitId").IsEqual("Unit", "Id")
                 as Select;
 
-            selCon = base.GetItemByFilters(selCon, searchFilter);
+            if (searchFilter != null)
+            {
+                selCon = base.GetItemByFilters(selCon, searchFilter);
+            }
 
             using (var dbExecutor = UserConnection.EnsureDBConnection())
             {
