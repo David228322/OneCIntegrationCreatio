@@ -60,7 +60,7 @@ namespace Terrasoft.Configuration.GenOneCIntegrationHelper
             return result;
         }
 
-        public bool СhekId(string schemaName, string id = "", string name = "")
+        public bool CheckId(string schemaName, string id = "", string name = "")
         {
             var result = false;
             var guidId = Guid.Empty;

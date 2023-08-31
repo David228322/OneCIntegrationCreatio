@@ -24,7 +24,7 @@ namespace Terrasoft.Configuration.GenCOrderProduct
     using Terrasoft.Configuration.GenOneCIntegrationHelper;
 
     [DataContract]
-    public class OneCOrderProduct : OneCBaseEntity<OneCOrderProduct>
+    public sealed class OneCOrderProduct : OneCBaseEntity<OneCOrderProduct>
     {
         [DataMember(Name = "Name")]
         public string Name { get; set; }
@@ -56,9 +56,9 @@ namespace Terrasoft.Configuration.GenCOrderProduct
         public override bool ResolveRemoteItem()
         {
             var selectQuery = new Select(UserConnection)
-                .Column(base.Entity, "Id").Top(1)
-                .From(base.Entity)
-                .Where(base.Entity, "OrderId").IsEqual(Column.Parameter(OrderId)) as Select;
+                .Column("OrderProduct", "Id").Top(1)
+                .From("OrderProduct")
+                .Where("OrderProduct", "OrderId").IsEqual(Column.Parameter(OrderId)) as Select;
 
             return base.ResolveRemoteItemByQuery(selectQuery);
         }
@@ -72,7 +72,7 @@ namespace Terrasoft.Configuration.GenCOrderProduct
 
             var oneCHelper = new OneCIntegrationHelper();
 
-            if (!oneCHelper.ÑhekId("Product", ProductId.ToString()))
+            if (!oneCHelper.CheckId("Product", ProductId.ToString()))
             {
                 return false;
             }
@@ -87,7 +87,7 @@ namespace Terrasoft.Configuration.GenCOrderProduct
 
             if (!string.IsNullOrEmpty(Currency))
             {
-                if (Currency == "ãðí")
+                if (Currency == "ï¿½ï¿½ï¿½")
                 {
                     Currency = "UAH";
                 }

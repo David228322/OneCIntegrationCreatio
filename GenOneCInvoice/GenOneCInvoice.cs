@@ -26,7 +26,7 @@ namespace Terrasoft.Configuration.GenOneCInvoice
     using Terrasoft.Configuration.GenOneCInvoiceProduct;
 
     [DataContract]
-    public class OneCInvoice : OneCBaseEntity<OneCInvoice>
+    public sealed class OneCInvoice : OneCBaseEntity<OneCInvoice>
     {
         [DataMember(Name = "Status")]
         public string Status { get; set; }
@@ -123,114 +123,107 @@ namespace Terrasoft.Configuration.GenOneCInvoice
         {
             bool success = false;
             var oneCHelper = new OneCIntegrationHelper();
-            Guid _Country = Guid.Empty;
-            Guid _Organization = Guid.Empty;
-            Guid _Counterparty = Guid.Empty;
-            Guid _Contract = Guid.Empty;
-            Guid _Warehouse = Guid.Empty;
-            Guid _BasisAdditionalDiscount = Guid.Empty;
-            Guid _ResponsibleMRK = Guid.Empty;
-            Guid _ResponsibleMAP = Guid.Empty;
-            Guid _ResponsibleMAP2 = Guid.Empty;
-            Guid _Currency = Guid.Empty;
-            Guid _Status = Guid.Empty;
+            Guid country = Guid.Empty;
+            Guid contract = Guid.Empty;
+            Guid currency = Guid.Empty;
+            Guid status = Guid.Empty;
 
-            if (!string.IsNullOrEmpty(this.ContractLocalId) && oneCHelper.ÑhekId("Contract", this.ContractLocalId))
+            if (!string.IsNullOrEmpty(this.ContractLocalId) && oneCHelper.CheckId("Contract", this.ContractLocalId))
             {
-                _Contract = new Guid(this.ContractLocalId);
+                contract = new Guid(this.ContractLocalId);
             }
 
             if (!string.IsNullOrEmpty(this.Currency))
             {
-                if (this.Currency == "ãðí")
+                if (this.Currency == "ï¿½ï¿½ï¿½")
                     this.Currency = "UAH";
 
-                _Currency = oneCHelper.GetId("Currency", this.Currency, "ShortName");
+                currency = oneCHelper.GetId("Currency", this.Currency, "ShortName");
             }
 
             if (!string.IsNullOrEmpty(this.Status))
             {
-                _Status = oneCHelper.GetId("InvoicePaymentStatus", this.Status, "GenShortName");
+                status = oneCHelper.GetId("InvoicePaymentStatus", this.Status, "Name");
             }
 
-            var _entity = UserConnection.EntitySchemaManager
+            var entity = UserConnection.EntitySchemaManager
                 .GetInstanceByName("Invoice").CreateEntity(UserConnection);
 
             if (this.BpmId == Guid.Empty)
             {
-                _entity.SetDefColumnValues();
+                entity.SetDefColumnValues();
             }
-            else if (!_entity.FetchFromDB(_entity.Schema.PrimaryColumn.Name, this.BpmId))
+            else if (!entity.FetchFromDB(entity.Schema.PrimaryColumn.Name, this.BpmId))
             {
-                _entity.SetDefColumnValues();
+                entity.SetDefColumnValues();
             }
 
             if (!string.IsNullOrEmpty(this.Id1C))
             {
-                _entity.SetColumnValue("GenID1C", this.Id1C);
+                entity.SetColumnValue("GenID1C", this.Id1C);
             }
 
-            if (_Status != Guid.Empty)
+            if (status != Guid.Empty)
             {
-                _entity.SetColumnValue("PaymentStatusId", _Status);
+                entity.SetColumnValue("PaymentStatusId", status);
             }
 
             if (!string.IsNullOrEmpty(this.Number))
             {
-                _entity.SetColumnValue("Number", this.Number);
+                entity.SetColumnValue("Number", this.Number);
             }
 
             if (!string.IsNullOrEmpty(this.StartDate))
             {
-                _entity.SetColumnValue("StartDate", DateTime.Parse(this.StartDate));
+                entity.SetColumnValue("StartDate", DateTime.Parse(this.StartDate));
             }
 
-            if (_Contract != Guid.Empty)
+            if (contract != Guid.Empty)
             {
-                _entity.SetColumnValue("ContractId", _Contract);
+                entity.SetColumnValue("ContractId", contract);
             }
 
-            if (!string.IsNullOrEmpty(this.OrderLocalId) && this.OrderLocalId != "00000000-0000-0000-0000-000000000000" && oneCHelper.ÑhekId("Order", this.OrderLocalId))
+            if (!string.IsNullOrEmpty(this.OrderLocalId) && this.OrderLocalId != "00000000-0000-0000-0000-000000000000" && oneCHelper.CheckId("Order", this.OrderLocalId))
             {
-                _entity.SetColumnValue("OrderId", new Guid(this.OrderLocalId));
+                entity.SetColumnValue("OrderId", new Guid(this.OrderLocalId));
             }
 
             if (!string.IsNullOrEmpty(this.DueDate))
             {
-                _entity.SetColumnValue("DueDate", DateTime.Parse(this.DueDate));
+                entity.SetColumnValue("DueDate", DateTime.Parse(this.DueDate));
             }
 
             if (!string.IsNullOrEmpty(this.Notes))
             {
-                _entity.SetColumnValue("Notes", this.Notes);
+                entity.SetColumnValue("Notes", this.Notes);
             }
 
             if (this.Amount > 0)
             {
-                _entity.SetColumnValue("Amount", this.Amount);
+                entity.SetColumnValue("Amount", this.Amount);
             }
 
             if (this.AmountWithoutTax > 0)
             {
-                _entity.SetColumnValue("AmountWithoutTax", this.AmountWithoutTax);
+                entity.SetColumnValue("AmountWithoutTax", this.AmountWithoutTax);
             }
 
-            if (_Currency != Guid.Empty)
+            if (currency != Guid.Empty)
             {
-                _entity.SetColumnValue("CurrencyId", _Currency);
+                entity.SetColumnValue("CurrencyId", currency);
             }
 
             var now = DateTime.Now;
-            if (_entity.StoringState == StoringObjectState.Changed || this.BpmId == Guid.Empty)
+            if (entity.StoringState == StoringObjectState.Changed || this.BpmId == Guid.Empty)
             {
-                _entity.SetColumnValue("ModifiedOn", now);
-                success = _entity.Save(true);
+                entity.SetColumnValue("ModifiedOn", now);
+                success = entity.Save(true);
             }
             else
             {
                 success = true;
             }
-            this.BpmId = (Guid)_entity.GetColumnValue("Id");
+            this.BpmId = (Guid)entity.GetColumnValue("Id");
             this.ModifiedOn = now.ToString();
             //TODO: complete this part of code
             /*

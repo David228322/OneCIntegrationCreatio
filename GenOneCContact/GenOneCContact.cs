@@ -21,17 +21,11 @@ namespace Terrasoft.Configuration.GenOneCContact
 	using Terrasoft.Configuration.GenIntegrationLogHelper;
 	using Terrasoft.Configuration.GenOneCSvcIntegration;
 	using Terrasoft.Configuration.GenOneCIntegrationHelper;
+    using Terrasoft.Configuration.OneCBaseEntity;
 
     [DataContract]
-	public class OneCContact
-	{
-		[DataMember(Name = "Id")]
-		public string Id1C { get; set; }
-		[DataMember(Name = "BPMId")]
-		public string LocalId { get; set; }
-		[IgnoreDataMember]
-		public Guid BpmId { get; set; }
-		
+	public sealed class OneCContact : OneCBaseEntity<OneCContact>
+    {	
 		[DataMember(Name = "Name")]
 		public string Name { get; set; }
 		[DataMember(Name = "Job")]
@@ -40,57 +34,24 @@ namespace Terrasoft.Configuration.GenOneCContact
 		public string DecisionRole { get; set; }
 		
 		[DataMember (Name = "Account")]
-		public string Account { get; set; }
-		
-		[IgnoreDataMember]
-		private UserConnection _userConnection;
-		[IgnoreDataMember]
-		public UserConnection UserConnection {
-			get =>
-				_userConnection ??
-				(_userConnection = HttpContext.Current.Session["UserConnection"] as UserConnection);
-			set => _userConnection = value;
-		}
+		public string AccountId { get; set; }
 		
 		public string ProcessRemoteItem(bool isFull = true)
 		{
-			if ((!string.IsNullOrEmpty(this.LocalId) && this.LocalId != "00000000-0000-0000-0000-000000000000") ||
-				(!string.IsNullOrEmpty(this.Id1C) && this.Id1C != "00000000-0000-0000-0000-000000000000"))
-			{
-				if (this.BpmId == Guid.Empty)
-				{
-					this.ResolveRemoteItem();
-				}
-				if (this.BpmId == Guid.Empty || isFull == true)
-				{
-					this.SaveRemoteItem();
-				}
-			}
-			return this.BpmId.ToString();
-		}
+            return base.ProcessRemoteItem(isFull);
+        }
 		
-		public bool ResolveRemoteItem()
+		public override bool ResolveRemoteItem()
 		{
-			if (string.IsNullOrEmpty(this.LocalId) && string.IsNullOrEmpty(this.Id1C))
-				return false;
 			var selEntity = new Select(UserConnection)
 				.Column("Contact", "Id").Top(1)
 				.From("Contact").As("Contact")
 			as Select;
-			if (!string.IsNullOrEmpty(this.LocalId))
-				selEntity = selEntity.Where("Contact", "Id").IsEqual(Column.Parameter(new Guid(this.LocalId))) as Select;
-			else if (!string.IsNullOrEmpty(this.Id1C))
-				selEntity = selEntity.Where("Contact", "GenID1C").IsEqual(Column.Parameter(this.Id1C)) as Select;
-			else
-				return false;
-			
-			var entityId = selEntity.ExecuteScalar<Guid>();
-			if (entityId == Guid.Empty) return false;
-			this.BpmId = entityId;
-			return true;
-		}
+
+            return base.ResolveRemoteItemByQuery(selEntity);
+        }
 		
-		private bool SaveRemoteItem()
+		public override bool SaveRemoteItem()
 		{
 			var success = false;
 			var oneCHelper = new OneCIntegrationHelper();
@@ -139,9 +100,9 @@ namespace Terrasoft.Configuration.GenOneCContact
 				entity.SetColumnValue("DecisionRoleId", decisionRole);
 			}
 			
-			if (!string.IsNullOrEmpty(this.Account))
+			if (!string.IsNullOrEmpty(this.AccountId))
 			{
-				entity.SetColumnValue("AccountId", new Guid(this.Account));
+				entity.SetColumnValue("AccountId", new Guid(this.AccountId));
 			}
 		
 			if (entity.StoringState == StoringObjectState.Changed || this.BpmId == Guid.Empty)
@@ -157,7 +118,7 @@ namespace Terrasoft.Configuration.GenOneCContact
 			return success;
 		}
 		
-		public List<OneCContact> GetItem(SearchFilter data)
+		public override List<OneCContact> GetItem(SearchFilter searchFilter)
 		{
 			var result = new List<OneCContact>();
 			
@@ -167,7 +128,7 @@ namespace Terrasoft.Configuration.GenOneCContact
 				.Column("Contact", "Name")
 				.Column("Job", "Name")
 				.Column("ContactDecisionRole", "Name")
-				.Column("Contact", "ModifiedOn")
+				.Column("Contact", "AccountId")
 				.From("Contact").As("Contact")
 				.LeftOuterJoin("Job").As("Job")
 					.On("Job", "Id").IsEqual("Contact", "JobId")
@@ -177,40 +138,9 @@ namespace Terrasoft.Configuration.GenOneCContact
 					.On("ContactDecisionRole", "Id").IsEqual("Contact", "DecisionRoleId")
 			as Select;
 
-			if (!string.IsNullOrEmpty(data.Id1C) || !string.IsNullOrEmpty(data.LocalId))
-			{
-				if (!string.IsNullOrEmpty(data.LocalId))
-					selCon = selCon.Where("Contact", "Id").IsEqual(Column.Parameter(new Guid(data.LocalId))) as Select;
-				else if (!string.IsNullOrEmpty(data.Id1C))
-					selCon = selCon.Where("Contact", "GenID1C").IsEqual(Column.Parameter(data.Id1C)) as Select;
-				
-			}
-			else if (!string.IsNullOrEmpty(data.CreatedFrom) || !string.IsNullOrEmpty(data.CreatedTo))
-			{
-				if (!string.IsNullOrEmpty(data.CreatedFrom))
-					selCon = selCon.Where("Contact", "CreatedOn").IsLessOrEqual(Column.Parameter(DateTime.Parse(data.CreatedFrom))) as Select;
-				else if (!string.IsNullOrEmpty(data.CreatedFrom) && !string.IsNullOrEmpty(data.CreatedTo))
-					selCon = selCon.And("Contact", "CreatedOn").IsGreaterOrEqual(Column.Parameter(DateTime.Parse(data.CreatedTo))) as Select;
-				else if (!string.IsNullOrEmpty(data.CreatedTo)) 
-					selCon = selCon.Where("Contact", "CreatedOn").IsGreaterOrEqual(Column.Parameter(DateTime.Parse(data.CreatedTo))) as Select;
-				
-			}
-			else if (!string.IsNullOrEmpty(data.ModifiedFrom) || !string.IsNullOrEmpty(data.ModifiedTo))
-			{
-				if (!string.IsNullOrEmpty(data.ModifiedFrom))
-					selCon = selCon.Where("Contact", "ModifiedOn").IsLessOrEqual(Column.Parameter(DateTime.Parse(data.ModifiedFrom))) as Select;
-				else if (!string.IsNullOrEmpty(data.ModifiedFrom) && !string.IsNullOrEmpty(data.ModifiedTo))
-					selCon = selCon.And("Contact", "ModifiedOn").IsGreaterOrEqual(Column.Parameter(DateTime.Parse(data.ModifiedTo))) as Select;
-				else if (!string.IsNullOrEmpty(data.ModifiedTo)) 
-					selCon = selCon.Where("Contact", "ModifiedOn").IsGreaterOrEqual(Column.Parameter(DateTime.Parse(data.ModifiedTo))) as Select;
-				
-			}
-			else 
-			{
-				return result;	
-			}
-			
-			using (var dbExecutor = UserConnection.EnsureDBConnection())
+            selCon = base.GetItemByFilters(selCon, searchFilter);
+
+            using (var dbExecutor = UserConnection.EnsureDBConnection())
 			{
 				using (var reader = selCon.ExecuteReader(dbExecutor))
 				{
@@ -221,8 +151,9 @@ namespace Terrasoft.Configuration.GenOneCContact
 							Id1C = (reader.GetValue(1) != System.DBNull.Value) ? (string)reader.GetValue(1) : "",
 							Name = (reader.GetValue(2) != System.DBNull.Value) ? (string)reader.GetValue(2) : "",
 							Job = (reader.GetValue(3) != System.DBNull.Value) ? (string)reader.GetValue(3) : "",
-							DecisionRole = (reader.GetValue(4) != System.DBNull.Value) ? (string)reader.GetValue(4) : ""
-						});	
+							DecisionRole = (reader.GetValue(4) != System.DBNull.Value) ? (string)reader.GetValue(4) : "",
+                            AccountId = (reader.GetValue(5) != System.DBNull.Value) ? reader.GetValue(5).ToString() : ""
+                        });	
 					}
 				}
 			}

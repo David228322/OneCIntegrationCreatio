@@ -29,34 +29,9 @@ namespace Terrasoft.Configuration.GenOneCSvcIntegration
 
     [ServiceContract]
     [AspNetCompatibilityRequirements(RequirementsMode = AspNetCompatibilityRequirementsMode.Required)]
-    public class OneCSvc : BaseService
+    public sealed class OneCSvc : BaseService
     {
-        [OperationContract]
-        [WebInvoke(Method = "POST", BodyStyle = WebMessageBodyStyle.Bare,
-            RequestFormat = WebMessageFormat.Json, ResponseFormat = WebMessageFormat.Json)]
-        public InfoResult SetOneCAccount(OneCAccount account)
-        {
-            var stopwatch = new Stopwatch();
-            stopwatch.Start();
-            var result = new InfoResult();
-
-            try
-            {
-                result.Result = "OK";
-                result.LocalId = account.ProcessRemoteItem();
-            }
-            catch (Exception ex)
-            {
-                result.Result = "ERROR";
-                result.Error = ex.Message;
-
-                LogHelper.Log(UserConnection, LogHelper.LogResult.Error, "SetOneCAccount" + ex.Message, stopwatch, LogHelper.IntegrationDirection.Import, account);
-                throw new Exception(ex.Message);
-            }
-            LogHelper.Log(UserConnection, LogHelper.LogResult.Ok, "SetOneCAccount", stopwatch, LogHelper.IntegrationDirection.Import, account);
-
-            return result;
-        }
+        #region Order
 
         [OperationContract]
         [WebInvoke(Method = "POST", BodyStyle = WebMessageBodyStyle.Bare,
@@ -72,13 +47,75 @@ namespace Terrasoft.Configuration.GenOneCSvcIntegration
         [OperationContract]
         [WebInvoke(Method = "POST", BodyStyle = WebMessageBodyStyle.Bare,
             RequestFormat = WebMessageFormat.Json, ResponseFormat = WebMessageFormat.Json)]
-        public List<OneCAccount> GetAccountInfo(SearchFilter account)
+        public InfoResult SetOrderInfo(OneCOrder order)
         {
-            var oneCAccount = new OneCAccount();
-            var result = new List<OneCAccount>();
-            result = oneCAccount.GetItem(account);
+            Stopwatch stopwatch = new Stopwatch();
+            stopwatch.Start();
+            InfoResult result = new InfoResult();
+
+            try
+            {
+                result.Result = "OK";
+                result.LocalId = order.ProcessRemoteItem();
+            }
+            catch (Exception ex)
+            {
+                result.Result = "ERROR";
+                result.Error = ex.Message;
+
+                LogHelper.Log(UserConnection, LogHelper.LogResult.Error, "SetOneCOrder" + ex.Message, stopwatch, LogHelper.IntegrationDirection.Import, order);
+                throw new Exception(ex.Message);
+            }
+            LogHelper.Log(UserConnection, LogHelper.LogResult.Ok, "SetOneCOrder", stopwatch, LogHelper.IntegrationDirection.Import, order);
+
             return result;
         }
+
+        #endregion
+
+        #region Invoice
+
+        [OperationContract]
+        [WebInvoke(Method = "POST", BodyStyle = WebMessageBodyStyle.Bare,
+            RequestFormat = WebMessageFormat.Json, ResponseFormat = WebMessageFormat.Json)]
+        public List<OneCInvoice> GetInvoiceInfo(SearchFilter search)
+        {
+            OneCInvoice invoice = new OneCInvoice();
+            List<OneCInvoice> result = new List<OneCInvoice>();
+            result = invoice.GetItem(search);
+            return result;
+        }
+
+        [OperationContract]
+        [WebInvoke(Method = "POST", BodyStyle = WebMessageBodyStyle.Bare,
+            RequestFormat = WebMessageFormat.Json, ResponseFormat = WebMessageFormat.Json)]
+        public InfoResult SetInvoiceInfo(OneCInvoice invoice)
+        {
+            Stopwatch stopwatch = new Stopwatch();
+            stopwatch.Start();
+            var result = new InfoResult();
+
+            try
+            {
+                result.Result = "OK";
+                result.LocalId = invoice.ProcessRemoteItem();               
+            }
+            catch (Exception ex)
+            {
+                result.Result = "ERROR";
+                result.Error = ex.Message;
+
+                LogHelper.Log(UserConnection, LogHelper.LogResult.Error, "SetOneCOrder" + ex.Message, stopwatch, LogHelper.IntegrationDirection.Import, invoice);
+                throw new Exception(ex.Message);
+            }
+            LogHelper.Log(UserConnection, LogHelper.LogResult.Ok, "SetOneCOrder", stopwatch, LogHelper.IntegrationDirection.Import, invoice);
+
+            return result;
+        }
+
+        #endregion
+
+        #region Product
 
         [OperationContract]
         [WebInvoke(Method = "POST", BodyStyle = WebMessageBodyStyle.Bare,
@@ -94,13 +131,33 @@ namespace Terrasoft.Configuration.GenOneCSvcIntegration
         [OperationContract]
         [WebInvoke(Method = "POST", BodyStyle = WebMessageBodyStyle.Bare,
             RequestFormat = WebMessageFormat.Json, ResponseFormat = WebMessageFormat.Json)]
-        public List<OneCInvoice> GetInvoiceInfo(SearchFilter search)
+        public InfoResult SetProductInfo(OneCProduct productRequest)
         {
-            OneCInvoice invoice = new OneCInvoice();
-            List<OneCInvoice> result = new List<OneCInvoice>();
-            result = invoice.GetItem(search);
+            Stopwatch stopwatch = new Stopwatch();
+            stopwatch.Start();
+            InfoResult result = new InfoResult();
+
+            try
+            {
+                result.Result = "OK";
+                result.LocalId = productRequest.ProcessRemoteItem();
+            }
+            catch (Exception ex)
+            {
+                result.Result = "ERROR";
+                result.Error = ex.Message;
+
+                LogHelper.Log(UserConnection, LogHelper.LogResult.Error, "SetOneCProduct" + ex.Message, stopwatch, LogHelper.IntegrationDirection.Import, productRequest);
+                throw new Exception(ex.Message);
+            }
+            LogHelper.Log(UserConnection, LogHelper.LogResult.Ok, "SetOneCProduct", stopwatch, LogHelper.IntegrationDirection.Import, productRequest);
+
             return result;
         }
+
+        #endregion
+
+        #region Contact
 
         [OperationContract]
         [WebInvoke(Method = "POST", BodyStyle = WebMessageBodyStyle.Bare,
@@ -142,6 +199,52 @@ namespace Terrasoft.Configuration.GenOneCSvcIntegration
             return result;
         }
 
+        #endregion
+
+        #region Account
+
+        [OperationContract]
+        [WebInvoke(Method = "POST", BodyStyle = WebMessageBodyStyle.Bare,
+            RequestFormat = WebMessageFormat.Json, ResponseFormat = WebMessageFormat.Json)]
+        public InfoResult SetAccountInfo(OneCAccount account)
+        {
+            var stopwatch = new Stopwatch();
+            stopwatch.Start();
+            var result = new InfoResult();
+
+            try
+            {
+                result.Result = "OK";
+                result.LocalId = account.ProcessRemoteItem();
+            }
+            catch (Exception ex)
+            {
+                result.Result = "ERROR";
+                result.Error = ex.Message;
+
+                LogHelper.Log(UserConnection, LogHelper.LogResult.Error, "SetOneCAccount" + ex.Message, stopwatch, LogHelper.IntegrationDirection.Import, account);
+                throw new Exception(ex.Message);
+            }
+            LogHelper.Log(UserConnection, LogHelper.LogResult.Ok, "SetOneCAccount", stopwatch, LogHelper.IntegrationDirection.Import, account);
+
+            return result;
+        }
+
+        [OperationContract]
+        [WebInvoke(Method = "POST", BodyStyle = WebMessageBodyStyle.Bare,
+            RequestFormat = WebMessageFormat.Json, ResponseFormat = WebMessageFormat.Json)]
+        public List<OneCAccount> GetAccountInfo(SearchFilter account)
+        {
+            var oneCAccount = new OneCAccount();
+            var result = new List<OneCAccount>();
+            result = oneCAccount.GetItem(account);
+            return result;
+        }
+
+        #endregion
+
+        #region Contract
+
         [OperationContract]
         [WebInvoke(Method = "POST", BodyStyle = WebMessageBodyStyle.Bare,
             RequestFormat = WebMessageFormat.Json, ResponseFormat = WebMessageFormat.Json)]
@@ -181,6 +284,8 @@ namespace Terrasoft.Configuration.GenOneCSvcIntegration
             result = oneCContract.GetItem(contract);
             return result;
         }
+
+        #endregion
     }
 
     [DataContract]

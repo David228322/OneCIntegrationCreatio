@@ -25,11 +25,8 @@ namespace Terrasoft.Configuration.GenOneCProduct
     using Terrasoft.Configuration.GenOneCIntegrationHelper;
 
     [DataContract]
-    public class OneCProduct : OneCBaseEntity<OneCProduct>
+    public sealed class OneCProduct : OneCBaseEntity<OneCProduct>
     {
-        [DataMember(Name = "LangCode")]
-        public string LangCode { get; set; }
-
         [DataMember(Name = "Name")]
         public string Name { get; set; }
         [DataMember(Name = "Description")]
@@ -52,21 +49,12 @@ namespace Terrasoft.Configuration.GenOneCProduct
 
         public override bool ResolveRemoteItem()
         {
-            if (string.IsNullOrEmpty(LocalId) && string.IsNullOrEmpty(Id1C))
-                return false;
             var selEntity = new Select(UserConnection)
                 .Column("Product", "Id").Top(1)
                 .From("Product").As("Product")
             as Select;
-            if (!string.IsNullOrEmpty(LocalId))
-                selEntity = selEntity.Where("Product", "Id").IsEqual(Column.Parameter(new Guid(LocalId))) as Select;
-            else
-                return false;
 
-            var entityId = selEntity.ExecuteScalar<Guid>();
-            if (entityId == Guid.Empty) return false;
-            BpmId = entityId;
-            return true;
+            return base.ResolveRemoteItemByQuery(selEntity);
         }
 
         public override bool SaveRemoteItem()
@@ -106,16 +94,12 @@ namespace Terrasoft.Configuration.GenOneCProduct
 
             if (!string.IsNullOrEmpty(Id1C))
             {
-                var localizableId1C = new LocalizableString();
-                localizableId1C.SetCultureValue(new CultureInfo(LangCode), Id1C);
-                entity.SetColumnValue("GenID1C", localizableId1C);
+                entity.SetColumnValue("GenID1C", Id1C);
             }
 
             if (!string.IsNullOrEmpty(Name))
             {
-                var localizableString = new LocalizableString();
-                localizableString.SetCultureValue(new CultureInfo(LangCode), Name);
-                entity.SetColumnValue("Name", localizableString);
+                entity.SetColumnValue("Name", Name);
             }
 
             if (unit != Guid.Empty)
@@ -143,7 +127,7 @@ namespace Terrasoft.Configuration.GenOneCProduct
             return success;
         }
 
-        public override List<OneCProduct> GetItem(SearchFilter data)
+        public override List<OneCProduct> GetItem(SearchFilter searchFilter)
         {
             var result = new List<OneCProduct>();
             var date = DateTime.Now;
@@ -164,36 +148,7 @@ namespace Terrasoft.Configuration.GenOneCProduct
                 .LeftOuterJoin("Unit").On("Product", "UnitId").IsEqual("Unit", "Id")
             as Select;
 
-            if (!string.IsNullOrEmpty(data.Id1C))
-            {
-                selCon = selCon.Where("Product", "GenID1C").IsEqual(Column.Parameter(data.Id1C)) as Select;
-            }
-            else if (!string.IsNullOrEmpty(data.LocalId))
-            {
-                selCon = selCon.Where("Product", "Id").IsEqual(Column.Parameter(new Guid(data.LocalId))) as Select;
-            }
-            else if (!string.IsNullOrEmpty(data.CreatedFrom) || !string.IsNullOrEmpty(data.CreatedTo))
-            {
-                if (!string.IsNullOrEmpty(data.CreatedFrom))
-                {
-                    selCon = selCon.Where("Product", "CreatedOn").IsLessOrEqual(Column.Parameter(DateTime.Parse(data.CreatedFrom))) as Select;
-                }
-                if (!string.IsNullOrEmpty(data.CreatedTo))
-                {
-                    selCon = selCon.And("Product", "CreatedOn").IsGreaterOrEqual(Column.Parameter(DateTime.Parse(data.CreatedTo))) as Select;
-                }
-            }
-            else if (!string.IsNullOrEmpty(data.ModifiedFrom) || !string.IsNullOrEmpty(data.ModifiedTo))
-            {
-                if (!string.IsNullOrEmpty(data.ModifiedFrom))
-                {
-                    selCon = selCon.Where("Product", "ModifiedOn").IsLessOrEqual(Column.Parameter(DateTime.Parse(data.ModifiedFrom))) as Select;
-                }
-                if (!string.IsNullOrEmpty(data.ModifiedTo))
-                {
-                    selCon = selCon.And("Product", "ModifiedOn").IsGreaterOrEqual(Column.Parameter(DateTime.Parse(data.ModifiedTo))) as Select;
-                }
-            }
+            selCon = base.GetItemByFilters(selCon, searchFilter);
 
             using (var dbExecutor = UserConnection.EnsureDBConnection())
             {
@@ -218,9 +173,9 @@ namespace Terrasoft.Configuration.GenOneCProduct
                         }
                     }
                 }
-                catch (global::System.Exception ex)
+                catch (System.Exception ex)
                 {                    
-                    throw;
+                    throw ex;
                 }
 
             }

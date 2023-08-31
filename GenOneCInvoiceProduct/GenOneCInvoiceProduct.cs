@@ -24,7 +24,7 @@ namespace Terrasoft.Configuration.GenOneCInvoiceProduct
     using Terrasoft.Configuration.OneCBaseEntity;
 
     [DataContract]
-    public class OneCInvoiceProduct : OneCBaseEntity<OneCInvoiceProduct>
+    public sealed class OneCInvoiceProduct : OneCBaseEntity<OneCInvoiceProduct>
     {
         [DataMember(Name = "InvoiceId")]
         public Guid InvoiceId { get; set; }
@@ -75,10 +75,10 @@ namespace Terrasoft.Configuration.GenOneCInvoiceProduct
 
             if (!string.IsNullOrEmpty(this.ProductLocalId) && this.ProductLocalId != "00000000-0000-0000-0000-000000000000")
             {
-                if (oneCHelper.ÑhekId("Product", this.ProductLocalId))
+                if (oneCHelper.CheckId("Product", this.ProductLocalId))
                 {
-                    Guid unit = Guid.Empty;
-                    Guid currency = Guid.Empty;
+                    var unit = Guid.Empty;
+                    var currency = Guid.Empty;
 
                     if (!string.IsNullOrEmpty(this.Unit))
                     {
@@ -87,7 +87,7 @@ namespace Terrasoft.Configuration.GenOneCInvoiceProduct
 
                     if (!string.IsNullOrEmpty(this.Currency))
                     {
-                        if (this.Currency == "ãðí")
+                        if (this.Currency == "ï¿½ï¿½ï¿½")
                             this.Currency = "UAH";
 
                         currency = oneCHelper.GetId("Currency", this.Currency, "ShortName");
@@ -113,11 +113,6 @@ namespace Terrasoft.Configuration.GenOneCInvoiceProduct
 
                     entity.SetColumnValue("ProductId", new Guid(this.ProductLocalId));
                     entity.SetColumnValue("InvoiceId", this.InvoiceId);
-
-                    if (oneCHelper.ÑhekId("Warehouse", this.WarehouseLocalId))
-                    {
-                        entity.SetColumnValue("GenWarehouseId", new Guid(this.WarehouseLocalId));
-                    }
 
                     if (this.Price > 0)
                     {

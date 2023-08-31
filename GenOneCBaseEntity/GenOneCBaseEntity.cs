@@ -39,7 +39,7 @@ namespace Terrasoft.Configuration.OneCBaseEntity
         public string ModifiedOn { get; set; }
 
         [IgnoreDataMember]
-        public string Entity => typeof(T).Name.Replace("OneC", "");
+        public string EntityName => typeof(T).Name.Replace("OneC", "");
 
         [IgnoreDataMember]
         private UserConnection _userConnection;
@@ -50,59 +50,65 @@ namespace Terrasoft.Configuration.OneCBaseEntity
                 _userConnection ??
                 (_userConnection = HttpContext.Current.Session["UserConnection"] as UserConnection);
             set => _userConnection = value;
+        }     
+
+        public string ProcessRemoteItem(bool isFull = true)
+        {
+            bool shouldResolveRemoteItem = (!string.IsNullOrEmpty(this.LocalId) && this.LocalId != "00000000-0000-0000-0000-000000000000") ||
+                               (!string.IsNullOrEmpty(this.Id1C) && this.Id1C != "00000000-0000-0000-0000-000000000000");
+
+            if (shouldResolveRemoteItem && this.BpmId == Guid.Empty)
+            {
+                this.ResolveRemoteItem();
+            }
+
+            if (shouldResolveRemoteItem && (this.BpmId == Guid.Empty || isFull))
+            {
+                this.SaveRemoteItem();
+            }
+
+            return this.BpmId.ToString();
         }
 
         public abstract bool SaveRemoteItem();
         public abstract List<T> GetItem(SearchFilter searchFilter);
         public abstract bool ResolveRemoteItem();
 
-        public string ProcessRemoteItem(bool isFull = true)
-        {
-            if (string.IsNullOrEmpty(LocalId) || LocalId == "00000000-0000-0000-0000-000000000000")
-            {
-                return BpmId.ToString();
-            }
-            if (BpmId == Guid.Empty)
-            {
-                ResolveRemoteItem();
-            }
-            if (BpmId == Guid.Empty || isFull)
-            {
-                SaveRemoteItem();
-            }
-            return BpmId.ToString();
-        }
-
         protected Select GetItemByFilters(Select selectQuery, SearchFilter searchFilters)
         {
+            if(searchFilters == null)
+            {
+                return selectQuery;
+            }
+
             if (!string.IsNullOrEmpty(searchFilters.Id1C))
             {
-                selectQuery = selectQuery.Where(Entity, "GenID1C").IsEqual(Column.Parameter(searchFilters.Id1C)) as Select;
+                selectQuery = selectQuery.Where(EntityName, "GenID1C").IsEqual(Column.Parameter(searchFilters.Id1C)) as Select;
             }
             else if (!string.IsNullOrEmpty(searchFilters.LocalId))
             {
-                selectQuery = selectQuery.Where(Entity, "Id").IsEqual(Column.Parameter(new Guid(searchFilters.LocalId))) as Select;
+                selectQuery = selectQuery.Where(EntityName, "Id").IsEqual(Column.Parameter(new Guid(searchFilters.LocalId))) as Select;
             }
             else if (!string.IsNullOrEmpty(searchFilters.CreatedFrom) || !string.IsNullOrEmpty(searchFilters.CreatedTo))
             {
                 if (!string.IsNullOrEmpty(searchFilters.CreatedFrom))
                 {
-                    selectQuery = selectQuery.Where(Entity, "CreatedOn").IsLessOrEqual(Column.Parameter(DateTime.Parse(searchFilters.CreatedFrom))) as Select;
+                    selectQuery = selectQuery.Where(EntityName, "CreatedOn").IsLessOrEqual(Column.Parameter(DateTime.Parse(searchFilters.CreatedFrom))) as Select;
                 }
                 if (!string.IsNullOrEmpty(searchFilters.CreatedTo))
                 {
-                    selectQuery = selectQuery.And(Entity, "CreatedOn").IsGreaterOrEqual(Column.Parameter(DateTime.Parse(searchFilters.CreatedTo))) as Select;
+                    selectQuery = selectQuery.And(EntityName, "CreatedOn").IsGreaterOrEqual(Column.Parameter(DateTime.Parse(searchFilters.CreatedTo))) as Select;
                 }
             }
             else if (!string.IsNullOrEmpty(searchFilters.ModifiedFrom) || !string.IsNullOrEmpty(searchFilters.ModifiedTo))
             {
                 if (!string.IsNullOrEmpty(searchFilters.ModifiedFrom))
                 {
-                    selectQuery = selectQuery.Where(Entity, "ModifiedOn").IsLessOrEqual(Column.Parameter(DateTime.Parse(searchFilters.ModifiedFrom))) as Select;
+                    selectQuery = selectQuery.Where(EntityName, "ModifiedOn").IsLessOrEqual(Column.Parameter(DateTime.Parse(searchFilters.ModifiedFrom))) as Select;
                 }
                 if (!string.IsNullOrEmpty(searchFilters.ModifiedTo))
                 {
-                    selectQuery = selectQuery.And(Entity, "ModifiedOn").IsGreaterOrEqual(Column.Parameter(DateTime.Parse(searchFilters.ModifiedTo))) as Select;
+                    selectQuery = selectQuery.And(EntityName, "ModifiedOn").IsGreaterOrEqual(Column.Parameter(DateTime.Parse(searchFilters.ModifiedTo))) as Select;
                 }
             }
 
@@ -120,11 +126,11 @@ namespace Terrasoft.Configuration.OneCBaseEntity
 
             if (!string.IsNullOrEmpty(LocalId))
             {
-                selectQuery.And(Entity, "Id").IsEqual(Column.Parameter(new Guid(LocalId)));
+                selectQuery = selectQuery.Where(EntityName, "Id").IsEqual(Column.Parameter(new Guid(LocalId))) as Select;
             }
             else if (!string.IsNullOrEmpty(Id1C))
             {
-                selectQuery.And(Entity, "GenID1C").IsEqual(Column.Parameter(Id1C));
+                selectQuery = selectQuery.Where(EntityName, "GenID1C").IsEqual(Column.Parameter(Id1C)) as Select;
             }
             else
             {
