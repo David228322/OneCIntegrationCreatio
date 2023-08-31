@@ -47,7 +47,7 @@ namespace Terrasoft.Configuration.GenOneCSvcIntegration
         [OperationContract]
         [WebInvoke(Method = "POST", BodyStyle = WebMessageBodyStyle.Bare,
             RequestFormat = WebMessageFormat.Json, ResponseFormat = WebMessageFormat.Json)]
-        public InfoResult SetOrderInfo(OneCOrder order)
+        public InfoResult SetOrderInfo(OneCOrder orderRequest)
         {
             Stopwatch stopwatch = new Stopwatch();
             stopwatch.Start();
@@ -56,17 +56,19 @@ namespace Terrasoft.Configuration.GenOneCSvcIntegration
             try
             {
                 result.Result = "OK";
-                result.LocalId = order.ProcessRemoteItem();
+                var order = orderRequest.ProcessRemoteItem();
+                result.LocalId = order.BpmId.ToString();
+				result.Date = order.ModifiedOn;
             }
             catch (Exception ex)
             {
                 result.Result = "ERROR";
                 result.Error = ex.Message;
 
-                LogHelper.Log(UserConnection, LogHelper.LogResult.Error, "SetOneCOrder" + ex.Message, stopwatch, LogHelper.IntegrationDirection.Import, order);
+                LogHelper.Log(UserConnection, LogHelper.LogResult.Error, "SetOneCOrder" + ex.Message, stopwatch, LogHelper.IntegrationDirection.Import, orderRequest);
                 throw new Exception(ex.Message);
             }
-            LogHelper.Log(UserConnection, LogHelper.LogResult.Ok, "SetOneCOrder", stopwatch, LogHelper.IntegrationDirection.Import, order);
+            LogHelper.Log(UserConnection, LogHelper.LogResult.Ok, "SetOneCOrder", stopwatch, LogHelper.IntegrationDirection.Import, orderRequest);
 
             return result;
         }
@@ -89,7 +91,7 @@ namespace Terrasoft.Configuration.GenOneCSvcIntegration
         [OperationContract]
         [WebInvoke(Method = "POST", BodyStyle = WebMessageBodyStyle.Bare,
             RequestFormat = WebMessageFormat.Json, ResponseFormat = WebMessageFormat.Json)]
-        public InfoResult SetInvoiceInfo(OneCInvoice invoice)
+        public InfoResult SetInvoiceInfo(OneCInvoice invoiceRequest)
         {
             Stopwatch stopwatch = new Stopwatch();
             stopwatch.Start();
@@ -98,17 +100,19 @@ namespace Terrasoft.Configuration.GenOneCSvcIntegration
             try
             {
                 result.Result = "OK";
-                result.LocalId = invoice.ProcessRemoteItem();               
+                var invoice = invoiceRequest.ProcessRemoteItem();
+                result.LocalId = invoice.BpmId.ToString();
+				result.Date = invoice.ModifiedOn;             
             }
             catch (Exception ex)
             {
                 result.Result = "ERROR";
                 result.Error = ex.Message;
 
-                LogHelper.Log(UserConnection, LogHelper.LogResult.Error, "SetOneCOrder" + ex.Message, stopwatch, LogHelper.IntegrationDirection.Import, invoice);
+                LogHelper.Log(UserConnection, LogHelper.LogResult.Error, "SetOneCOrder" + ex.Message, stopwatch, LogHelper.IntegrationDirection.Import, invoiceRequest);
                 throw new Exception(ex.Message);
             }
-            LogHelper.Log(UserConnection, LogHelper.LogResult.Ok, "SetOneCOrder", stopwatch, LogHelper.IntegrationDirection.Import, invoice);
+            LogHelper.Log(UserConnection, LogHelper.LogResult.Ok, "SetOneCOrder", stopwatch, LogHelper.IntegrationDirection.Import, invoiceRequest);
 
             return result;
         }
@@ -140,7 +144,9 @@ namespace Terrasoft.Configuration.GenOneCSvcIntegration
             try
             {
                 result.Result = "OK";
-                result.LocalId = productRequest.ProcessRemoteItem();
+                var product = productRequest.ProcessRemoteItem();
+                result.LocalId = product.BpmId.ToString();
+				result.Date = product.ModifiedOn; 
             }
             catch (Exception ex)
             {
@@ -162,7 +168,7 @@ namespace Terrasoft.Configuration.GenOneCSvcIntegration
         [OperationContract]
         [WebInvoke(Method = "POST", BodyStyle = WebMessageBodyStyle.Bare,
             RequestFormat = WebMessageFormat.Json, ResponseFormat = WebMessageFormat.Json)]
-        public InfoResult SetContactInfo(OneCContact contact)
+        public InfoResult SetContactInfo(OneCContact contactRequest)
         {
             var stopwatch = new Stopwatch();
             stopwatch.Start();
@@ -171,17 +177,19 @@ namespace Terrasoft.Configuration.GenOneCSvcIntegration
             try
             {
                 result.Result = "OK";
-                result.LocalId = contact.ProcessRemoteItem();
+                var contact = contactRequest.ProcessRemoteItem();
+                result.LocalId = contact.BpmId.ToString();
+				result.Date = contact.ModifiedOn; 
             }
             catch (Exception ex)
             {
                 result.Result = "ERROR";
                 result.Error = ex.Message;
 
-                LogHelper.Log(UserConnection, LogHelper.LogResult.Error, "SetOneCContact" + ex.Message, stopwatch, LogHelper.IntegrationDirection.Import, contact);
+                LogHelper.Log(UserConnection, LogHelper.LogResult.Error, "SetOneCContact" + ex.Message, stopwatch, LogHelper.IntegrationDirection.Import, contactRequest);
                 throw new Exception(ex.Message);
             }
-            LogHelper.Log(UserConnection, LogHelper.LogResult.Ok, "SetOneCContact", stopwatch, LogHelper.IntegrationDirection.Import, contact);
+            LogHelper.Log(UserConnection, LogHelper.LogResult.Ok, "SetOneCContact", stopwatch, LogHelper.IntegrationDirection.Import, contactRequest);
 
             return result;
         }
@@ -206,7 +214,7 @@ namespace Terrasoft.Configuration.GenOneCSvcIntegration
         [OperationContract]
         [WebInvoke(Method = "POST", BodyStyle = WebMessageBodyStyle.Bare,
             RequestFormat = WebMessageFormat.Json, ResponseFormat = WebMessageFormat.Json)]
-        public InfoResult SetAccountInfo(OneCAccount account)
+        public InfoResult SetAccountInfo(OneCAccount accountRequest)
         {
             var stopwatch = new Stopwatch();
             stopwatch.Start();
@@ -215,17 +223,19 @@ namespace Terrasoft.Configuration.GenOneCSvcIntegration
             try
             {
                 result.Result = "OK";
-                result.LocalId = account.ProcessRemoteItem();
+                var account = accountRequest.ProcessRemoteItem();
+                result.LocalId = account.BpmId.ToString();
+				result.Date = account.ModifiedOn; 
             }
             catch (Exception ex)
             {
                 result.Result = "ERROR";
                 result.Error = ex.Message;
 
-                LogHelper.Log(UserConnection, LogHelper.LogResult.Error, "SetOneCAccount" + ex.Message, stopwatch, LogHelper.IntegrationDirection.Import, account);
+                LogHelper.Log(UserConnection, LogHelper.LogResult.Error, "SetOneCAccount" + ex.Message, stopwatch, LogHelper.IntegrationDirection.Import, accountRequest);
                 throw new Exception(ex.Message);
             }
-            LogHelper.Log(UserConnection, LogHelper.LogResult.Ok, "SetOneCAccount", stopwatch, LogHelper.IntegrationDirection.Import, account);
+            LogHelper.Log(UserConnection, LogHelper.LogResult.Ok, "SetOneCAccount", stopwatch, LogHelper.IntegrationDirection.Import, accountRequest);
 
             return result;
         }
@@ -248,7 +258,7 @@ namespace Terrasoft.Configuration.GenOneCSvcIntegration
         [OperationContract]
         [WebInvoke(Method = "POST", BodyStyle = WebMessageBodyStyle.Bare,
             RequestFormat = WebMessageFormat.Json, ResponseFormat = WebMessageFormat.Json)]
-        public InfoResult SetContractInfo(OneCContract contract)
+        public InfoResult SetContractInfo(OneCContract contractRequest)
         {
             var stopwatch = new Stopwatch();
             stopwatch.Start();
@@ -257,17 +267,19 @@ namespace Terrasoft.Configuration.GenOneCSvcIntegration
             try
             {
                 result.Result = "OK";
-                result.LocalId = contract.ProcessRemoteItem();
+                var contract = contractRequest.ProcessRemoteItem();
+                result.LocalId = contract.BpmId.ToString();
+				result.Date = contract.ModifiedOn; 
             }
             catch (Exception ex)
             {
                 result.Result = "ERROR";
                 result.Error = ex.Message;
 
-                LogHelper.Log(UserConnection, LogHelper.LogResult.Error, "SetOneCContract" + ex.Message, stopwatch, LogHelper.IntegrationDirection.Import, contract);
+                LogHelper.Log(UserConnection, LogHelper.LogResult.Error, "SetOneCContract" + ex.Message, stopwatch, LogHelper.IntegrationDirection.Import, contractRequest);
                 throw new Exception(ex.Message);
             }
-            LogHelper.Log(UserConnection, LogHelper.LogResult.Ok, "SetOneCContract", stopwatch, LogHelper.IntegrationDirection.Import, contract);
+            LogHelper.Log(UserConnection, LogHelper.LogResult.Ok, "SetOneCContract", stopwatch, LogHelper.IntegrationDirection.Import, contractRequest);
 
             return result;
         }

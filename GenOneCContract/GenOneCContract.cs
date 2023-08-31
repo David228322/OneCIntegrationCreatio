@@ -34,7 +34,7 @@ namespace Terrasoft.Configuration.GenOneCContract
         [DataMember(Name = "ContactId")]
         public string ContactId { get; set; }
 
-        public string ProcessRemoteItem(bool isFull = true)
+        public OneCBaseEntity<OneCContract> ProcessRemoteItem(bool isFull = true)
         {
             return base.ProcessRemoteItem(isFull);
         }

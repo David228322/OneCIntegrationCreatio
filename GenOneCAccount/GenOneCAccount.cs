@@ -36,7 +36,7 @@
 		[DataMember(Name = "Addresses")]
 		public List<OneCAccountAddres> Addresses { get; set; }
 		
-		public string ProcessRemoteItem(bool isFull = true)
+		public OneCBaseEntity<OneCAccount> ProcessRemoteItem(bool isFull = true)
 		{
             return base.ProcessRemoteItem(isFull);
         }

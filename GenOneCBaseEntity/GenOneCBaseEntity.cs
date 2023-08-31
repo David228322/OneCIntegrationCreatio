@@ -52,7 +52,7 @@ namespace Terrasoft.Configuration.OneCBaseEntity
             set => _userConnection = value;
         }     
 
-        public string ProcessRemoteItem(bool isFull = true)
+        public OneCBaseEntity<T> ProcessRemoteItem(bool isFull = true)
         {
             bool shouldResolveRemoteItem = (!string.IsNullOrEmpty(this.LocalId) && this.LocalId != "00000000-0000-0000-0000-000000000000") ||
                                (!string.IsNullOrEmpty(this.Id1C) && this.Id1C != "00000000-0000-0000-0000-000000000000");
@@ -67,7 +67,7 @@ namespace Terrasoft.Configuration.OneCBaseEntity
                 this.SaveRemoteItem();
             }
 
-            return this.BpmId.ToString();
+            return (OneCBaseEntity<T>)this;
         }
 
         public abstract bool SaveRemoteItem();

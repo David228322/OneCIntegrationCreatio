@@ -47,7 +47,7 @@ namespace Terrasoft.Configuration.GenOneCInvoiceProduct
         [DataMember(Name = "TotalAmount")]
         public decimal TotalAmount { get; set; }
 
-        public string ProcessRemoteItem(bool isFull = true)
+        public OneCBaseEntity<OneCInvoiceProduct> ProcessRemoteItem(bool isFull = true)
         {
             return base.ProcessRemoteItem(isFull);
         }

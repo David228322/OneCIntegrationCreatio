@@ -48,7 +48,7 @@ namespace Terrasoft.Configuration.GenCOrderProduct
         [DataMember(Name = "OrderId")]
         public Guid OrderId { get; set; }
 
-        public string ProcessRemoteItem(bool isFull = true)
+        public OneCBaseEntity<OneCOrderProduct> ProcessRemoteItem(bool isFull = true)
         {
             return base.ProcessRemoteItem(isFull);
         }

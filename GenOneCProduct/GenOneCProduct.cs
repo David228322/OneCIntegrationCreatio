@@ -42,7 +42,7 @@ namespace Terrasoft.Configuration.GenOneCProduct
         [DataMember(Name = "Currency")]
         public string Currency { get; set; }
 
-        public string ProcessRemoteItem(bool isFull = true)
+        public OneCBaseEntity<OneCProduct> ProcessRemoteItem(bool isFull = true)
         {
             return base.ProcessRemoteItem(isFull);
         }

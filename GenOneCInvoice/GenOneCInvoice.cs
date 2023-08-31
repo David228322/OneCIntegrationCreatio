@@ -66,7 +66,7 @@ namespace Terrasoft.Configuration.GenOneCInvoice
         [DataMember(Name = "InvoicePaid")]
         public List<OneCInvoicePaid> InvoicePaid { get; set; } */
 
-        public string ProcessRemoteItem(bool isFull = true)
+        public OneCBaseEntity<OneCInvoice> ProcessRemoteItem(bool isFull = true)
         {
             return base.ProcessRemoteItem(isFull);
         }

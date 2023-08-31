@@ -54,7 +54,7 @@ namespace Terrasoft.Configuration.GenOneCOrder
         [IgnoreDataMember]
         public List<OneCProduct> OneCProducts { get; set; } = new List<OneCProduct>();
 
-        public string ProcessRemoteItem(bool isFull = true)
+        public OneCBaseEntity<OneCOrder> ProcessRemoteItem(bool isFull = true)
         {
             return base.ProcessRemoteItem(isFull);
         }
