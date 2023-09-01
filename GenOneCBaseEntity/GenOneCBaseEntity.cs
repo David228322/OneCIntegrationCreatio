@@ -8,6 +8,7 @@ namespace Terrasoft.Configuration.OneCBaseEntity
     using System.Runtime.Serialization;
     using Terrasoft.Web.Common;
     using Web.Http.Abstractions;
+    using System.Reflection;
 
     using System.Diagnostics;
     using System;
@@ -21,6 +22,7 @@ namespace Terrasoft.Configuration.OneCBaseEntity
     using Configuration.GenIntegrationLogHelper;
     using Configuration.GenOneCSvcIntegration;
     using Terrasoft.Configuration.OneCBaseEntity;
+    using Terrasoft.Configuration.GenOneCIntegrationHelper;
 
     [DataContract]
     public abstract class OneCBaseEntity<T>
@@ -145,6 +147,148 @@ namespace Terrasoft.Configuration.OneCBaseEntity
             }
 
             return success;
+        }
+
+        public bool SaveToDatabase()
+        {
+            var success = false;
+            var oneCHelper = new OneCIntegrationHelper();
+            var entity = UserConnection.EntitySchemaManager
+                .GetInstanceByName(EntityName).CreateEntity(UserConnection);
+
+            if (this.BpmId == Guid.Empty)
+            {
+                entity.SetDefColumnValues();
+            }
+            else if (!entity.FetchFromDB(entity.Schema.PrimaryColumn.Name, this.BpmId))
+            {
+                entity.SetDefColumnValues();
+            }
+
+            if (!string.IsNullOrEmpty(this.Id1C))
+            {
+                entity.SetColumnValue("GenID1C", this.Id1C);
+            }
+
+            Type type = typeof(T);
+            PropertyInfo[] properties = type.GetProperties()
+            .Where(property => property.GetCustomAttribute<DatabaseColumnAttribute>() != null)
+            .ToArray();
+            
+            foreach (PropertyInfo property in properties)
+            {
+                DatabaseColumnAttribute attribute = property.GetCustomAttribute<DatabaseColumnAttribute>();               
+
+                var propertyValue = property.GetValue(this);
+                if (propertyValue != null && propertyValue.ToString() != "00000000-0000-0000-0000-000000000000")
+                {
+                    string joinColumn = attribute.JoinColumn;
+                    if (joinColumn != null)
+                    {
+                        string tableName = attribute.TableName;
+                        var valueFromDatabase = oneCHelper.GetId(tableName, propertyValue.ToString());
+                        if (valueFromDatabase != null)
+                        {
+                            entity.SetColumnValue(joinColumn, valueFromDatabase);
+                        }
+                    }
+                    else
+                    {
+                        string columnName = attribute.ColumnName;
+                        entity.SetColumnValue(columnName, propertyValue);
+                    }
+                }                
+            }
+
+            if (entity.StoringState == StoringObjectState.Changed || this.BpmId == Guid.Empty)
+            {
+                entity.SetColumnValue("ModifiedOn", DateTime.Now);
+                success = entity.Save(true);
+            }
+            else
+            {
+                success = true;
+            }
+            this.BpmId = (Guid)entity.GetColumnValue("Id");
+            return success;
+        }
+
+        public List<T> GetFromDatabase(SearchFilter searchFilter)
+        {
+            var result = new List<T>();
+
+            Type type = typeof(T);
+            PropertyInfo[] properties = type.GetProperties()
+            .Where(property => property.GetCustomAttribute<DatabaseColumnAttribute>() != null)
+            .ToArray();
+
+            var selectQuery = new Select(UserConnection)
+                .Column(EntityName, "Id")
+                .Column(EntityName, "GenID1C")
+                .From(EntityName) as Select;
+            foreach (PropertyInfo property in properties)
+            {
+                DatabaseColumnAttribute attribute = property.GetCustomAttribute<DatabaseColumnAttribute>();
+                string columnName = attribute.ColumnName;
+                string tableName = attribute.TableName;
+                string joinColumn = attribute.JoinColumn;
+
+                selectQuery = selectQuery.Column(tableName, columnName).As(attribute.ColumnFullName);
+                if(joinColumn != null)
+                {
+                    selectQuery = selectQuery.LeftOuterJoin(tableName)
+                    .On(tableName, "Id").IsEqual(EntityName, joinColumn) as Select;
+                }
+            }
+
+            selectQuery = GetItemByFilters(selectQuery, searchFilter);
+
+            using (var dbExecutor = UserConnection.EnsureDBConnection())
+            {
+                using (var reader = selectQuery.ExecuteReader(dbExecutor))
+                {
+                    while (reader.Read())
+                    {
+                        T newEntity = Activator.CreateInstance<T>();
+
+                        foreach (PropertyInfo property in properties)
+                        {
+                            var columnName = property.GetCustomAttribute<DatabaseColumnAttribute>().ColumnFullName;
+                            int columnIndex = reader.GetOrdinal(columnName);
+
+                            if (!reader.IsDBNull(columnIndex))
+                            {
+                                object columnValue = reader.GetValue(columnIndex);
+                                property.SetValue(newEntity, columnValue);
+                            }
+                        }
+
+                        LocalId = reader.GetValue(reader.GetOrdinal("Id")).ToString() ?? "";
+                        Id1C = reader.GetValue(reader.GetOrdinal("GenID1C")).ToString() ?? "";                       
+
+                        result.Add(newEntity);
+                    }
+                }
+            }
+
+            return result;
+        }
+    }
+
+    [AttributeUsage(AttributeTargets.Property, Inherited = false, AllowMultiple = false)]
+    public class DatabaseColumnAttribute : Attribute
+    {
+        public string ColumnName { get; set; }
+        public string TableName { get; set; }
+        public string JoinColumn { get; set; }
+
+        public string ColumnFullName => $"{TableName}.{ColumnName}";
+
+        public DatabaseColumnAttribute(string parentName, string columnName, string joinColumn = null)
+        {
+            this.TableName = parentName;
+            this.ColumnName = columnName;
+            JoinColumn = joinColumn;
         }
     }
 }

@@ -197,13 +197,11 @@ namespace Terrasoft.Configuration.GenOneCSvcIntegration
         [OperationContract]
         [WebInvoke(Method = "POST", BodyStyle = WebMessageBodyStyle.Bare,
             RequestFormat = WebMessageFormat.Json, ResponseFormat = WebMessageFormat.Json)]
-        public List<OneCContact> GetContactInfo(SearchFilter contact)
+        public List<OneCContact> GetContactInfo(SearchFilter searchFilter)
         {
-            var stopwatch = new Stopwatch();
-            stopwatch.Start();
             var oneCContact = new OneCContact();
             var result = new List<OneCContact>();
-            result = oneCContact.GetItem(contact);
+            result = oneCContact.GetItem(searchFilter);
             return result;
         }
 
