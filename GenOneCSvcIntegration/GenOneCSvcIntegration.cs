@@ -58,7 +58,7 @@ namespace Terrasoft.Configuration.GenOneCSvcIntegration
                 result.Result = "OK";
                 var order = orderRequest.ProcessRemoteItem();
                 result.LocalId = order.BpmId.ToString();
-				result.Date = order.ModifiedOn;
+				result.Date = order.ModifiedOn.ToString();
             }
             catch (Exception ex)
             {
@@ -102,7 +102,7 @@ namespace Terrasoft.Configuration.GenOneCSvcIntegration
                 result.Result = "OK";
                 var invoice = invoiceRequest.ProcessRemoteItem();
                 result.LocalId = invoice.BpmId.ToString();
-				result.Date = invoice.ModifiedOn;             
+				result.Date = invoice.ModifiedOn.ToString();             
             }
             catch (Exception ex)
             {
@@ -146,7 +146,7 @@ namespace Terrasoft.Configuration.GenOneCSvcIntegration
                 result.Result = "OK";
                 var product = productRequest.ProcessRemoteItem();
                 result.LocalId = product.BpmId.ToString();
-				result.Date = product.ModifiedOn; 
+				result.Date = product.ModifiedOn.ToString(); 
             }
             catch (Exception ex)
             {
@@ -179,7 +179,7 @@ namespace Terrasoft.Configuration.GenOneCSvcIntegration
                 result.Result = "OK";
                 var contact = contactRequest.ProcessRemoteItem();
                 result.LocalId = contact.BpmId.ToString();
-				result.Date = contact.ModifiedOn; 
+				result.Date = contact.ModifiedOn.ToString(); 
             }
             catch (Exception ex)
             {
@@ -223,7 +223,7 @@ namespace Terrasoft.Configuration.GenOneCSvcIntegration
                 result.Result = "OK";
                 var account = accountRequest.ProcessRemoteItem();
                 result.LocalId = account.BpmId.ToString();
-				result.Date = account.ModifiedOn; 
+				result.Date = account.ModifiedOn.ToString(); 
             }
             catch (Exception ex)
             {
@@ -267,7 +267,7 @@ namespace Terrasoft.Configuration.GenOneCSvcIntegration
                 result.Result = "OK";
                 var contract = contractRequest.ProcessRemoteItem();
                 result.LocalId = contract.BpmId.ToString();
-				result.Date = contract.ModifiedOn; 
+				result.Date = contract.ModifiedOn.ToString(); 
             }
             catch (Exception ex)
             {

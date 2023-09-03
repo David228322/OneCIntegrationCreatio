@@ -145,8 +145,8 @@ namespace Terrasoft.Configuration.GenOneCContract
                                 Number = (reader.GetValue(2) != System.DBNull.Value) ? (string)reader.GetValue(2) : "",
                                 ContactId = (reader.GetValue(3) != System.DBNull.Value) ? (string)reader.GetValue(3).ToString() : "",
                                 Type = (reader.GetValue(4) != System.DBNull.Value) ? (string)reader.GetValue(4) : "",
-                                CreatedOn = (reader.GetValue(5) != System.DBNull.Value) ? DateTime.Parse(reader.GetValue(5).ToString()).ToLocalTime().ToString() : "",
-                                ModifiedOn = (reader.GetValue(6) != System.DBNull.Value) ? DateTime.Parse(reader.GetValue(6).ToString()).ToLocalTime().ToString() : ""
+                           //     CreatedOn = (reader.GetValue(5) != System.DBNull.Value) ? DateTime.Parse(reader.GetValue(5).ToString()).ToLocalTime().ToString() : "",
+                           //     ModifiedOn = (reader.GetValue(6) != System.DBNull.Value) ? DateTime.Parse(reader.GetValue(6).ToString()).ToLocalTime().ToString() : ""
                             });
                         }
                     }

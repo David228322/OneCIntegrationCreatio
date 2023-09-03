@@ -30,24 +30,40 @@ namespace Terrasoft.Configuration.GenOneCOrder
     public sealed class OneCOrder : OneCBaseEntity<OneCOrder>
     { 
         [DataMember(Name = "PrimaryAmount")]
+        [DatabaseColumn("Order", "PrimaryAmount")]
         public decimal PrimaryAmount { get; set; }
+
         [DataMember(Name = "PaymentAmount")]
+        [DatabaseColumn("Order", "PaymentAmount")]
         public decimal PaymentAmount { get; set; }
+
         [DataMember(Name = "Amount")]
+        [DatabaseColumn("Order", "Amount")]
         public decimal Amount { get; set; }
+
         [DataMember(Name = "Number")]
+        [DatabaseColumn("Order", "Number")]
         public string Number { get; set; }
+
         [DataMember(Name = "DeliveryAddress")]
+        [DatabaseColumn("Order", "DeliveryAddress")]
         public string DeliveryAddress { get; set; }
+
         [DataMember(Name = "OrderStatus")]
+        [DatabaseColumn("OrderStatus", "Name", "StatusId")]
         public string OrderStatus { get; set; }
+
         [DataMember(Name = "Comment")]
+        [DatabaseColumn("Order", "Comment")]
         public string Comment { get; set; }
 
         [DataMember(Name = "AccountId")]
-        public string AccountId { get; set; }
+        [DatabaseColumn("Order", "AccountId")]
+        public Guid AccountId { get; set; }
+
         [DataMember(Name = "ContactId")]
-        public string ContactId { get; set; }
+        [DatabaseColumn("Order", "ContactId")]
+        public Guid ContactId { get; set; }
 
         [DataMember(Name = "OrderProducts")]
         public List<OneCOrderProduct> OrderProducts { get; set; }
@@ -75,7 +91,7 @@ namespace Terrasoft.Configuration.GenOneCOrder
             var oneCHelper = new OneCIntegrationHelper();
             Guid contactId = Guid.Empty;
             Guid accountId = Guid.Empty;
-
+            /*
             if (!string.IsNullOrEmpty(this.AccountId))
             {
                 accountId = oneCHelper.GetId("Account", this.AccountId);
@@ -85,7 +101,7 @@ namespace Terrasoft.Configuration.GenOneCOrder
             {
                 contactId = oneCHelper.GetId("Contact", this.ContactId);
             }
-
+            */
             var entity = UserConnection.EntitySchemaManager
                 .GetInstanceByName("Order").CreateEntity(UserConnection);
 
@@ -212,53 +228,13 @@ namespace Terrasoft.Configuration.GenOneCOrder
 
         public override List<OneCOrder> GetItem(SearchFilter searchFilter)
         {
-            var result = new List<OneCOrder>();
-
-            var selCon = new Select(UserConnection)
-                .Column("Order", "Id")
-                .Column("Order", "GenID1C")
-                .Column("Order", "Number")
-                .Column("Order", "PrimaryAmount")
-                .Column("Order", "PaymentAmount")
-                .Column("Order", "DeliveryAddress")
-                .Column("OrderStatus", "Name")
-                .Column("Comment")
-                .Column("Order", "ContactId")
-                .Column("Order", "AccountId")
-                .From("Order")
-                .LeftOuterJoin("OrderStatus").On("Order", "StatusId").IsEqual("OrderStatus", "Id")
-            as Select;
-
-            selCon = base.GetItemByFilters(selCon, searchFilter);
-
-            using (var dbExecutor = UserConnection.EnsureDBConnection())
-            {
-                using (var reader = selCon.ExecuteReader(dbExecutor))
-                {
-                    while (reader.Read())
-                    {
-                        result.Add(new OneCOrder()
-                        {
-                            LocalId = (reader.GetValue(0) != System.DBNull.Value) ? (string)reader.GetValue(0).ToString() : "",
-                            Id1C = (reader.GetValue(1) != System.DBNull.Value) ? (string)reader.GetValue(1) : "",
-                            Number = (reader.GetValue(2) != System.DBNull.Value) ? (string)reader.GetValue(2) : "",
-                            PrimaryAmount = (reader.GetValue(3) != System.DBNull.Value) ? decimal.Parse(reader.GetValue(3).ToString()) : 0,
-                            PaymentAmount = (reader.GetValue(4) != System.DBNull.Value) ? decimal.Parse(reader.GetValue(4).ToString()) : 0,
-                            DeliveryAddress = (reader.GetValue(5) != System.DBNull.Value) ? (string)reader.GetValue(5) : "",
-                            OrderStatus = (reader.GetValue(6) != System.DBNull.Value) ? (string)reader.GetValue(6) : "",
-                            Comment = (reader.GetValue(7) != System.DBNull.Value) ? (string)reader.GetValue(7) : "",
-                            ContactId = (reader.GetValue(8) != System.DBNull.Value) ? reader.GetValue(8).ToString() : "",
-                            AccountId = (reader.GetValue(9) != System.DBNull.Value) ? reader.GetValue(9).ToString() : "",
-                        });
-                    }
-                }
-            }
+            var result = base.GetFromDatabase(searchFilter);
 
             var orderProducts = new OneCOrderProduct();
             foreach (var order in result)
             {
-                order.OrderProducts = orderProducts.GetAllByOrderId(order.LocalId);
-            }
+                order.OrderProducts = orderProducts.GetItem(order.LocalId);
+            } 
 
             return result;
         }

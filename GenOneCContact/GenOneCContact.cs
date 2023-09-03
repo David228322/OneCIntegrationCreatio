@@ -65,7 +65,6 @@ namespace Terrasoft.Configuration.GenOneCContact
 		public override List<OneCContact> GetItem(SearchFilter searchFilter)
 		{
 			return base.GetFromDatabase(searchFilter);
-
         }
 	}
 }

@@ -25,7 +25,7 @@ namespace Terrasoft.Configuration.OneCBaseEntity
     using Terrasoft.Configuration.GenOneCIntegrationHelper;
 
     [DataContract]
-    public abstract class OneCBaseEntity<T>
+    public abstract class OneCBaseEntity<T> where T : OneCBaseEntity<T>
     {
         [DataMember(Name = "BPMId")]
         public string LocalId { get; set; }
@@ -52,7 +52,7 @@ namespace Terrasoft.Configuration.OneCBaseEntity
                 _userConnection ??
                 (_userConnection = HttpContext.Current.Session["UserConnection"] as UserConnection);
             set => _userConnection = value;
-        }     
+        }
 
         public OneCBaseEntity<T> ProcessRemoteItem(bool isFull = true)
         {
@@ -78,7 +78,7 @@ namespace Terrasoft.Configuration.OneCBaseEntity
 
         protected Select GetItemByFilters(Select selectQuery, SearchFilter searchFilters)
         {
-            if(searchFilters == null)
+            if (searchFilters == null)
             {
                 return selectQuery;
             }
@@ -170,14 +170,16 @@ namespace Terrasoft.Configuration.OneCBaseEntity
                 entity.SetColumnValue("GenID1C", this.Id1C);
             }
 
+            entity.SetColumnValue("ModifiedOn", DateTime.Now);
+
             Type type = typeof(T);
             PropertyInfo[] properties = type.GetProperties()
             .Where(property => property.GetCustomAttribute<DatabaseColumnAttribute>() != null)
             .ToArray();
-            
+
             foreach (PropertyInfo property in properties)
             {
-                DatabaseColumnAttribute attribute = property.GetCustomAttribute<DatabaseColumnAttribute>();               
+                DatabaseColumnAttribute attribute = property.GetCustomAttribute<DatabaseColumnAttribute>();
 
                 var propertyValue = property.GetValue(this);
                 if (propertyValue != null && propertyValue.ToString() != "00000000-0000-0000-0000-000000000000")
@@ -197,23 +199,25 @@ namespace Terrasoft.Configuration.OneCBaseEntity
                         string columnName = attribute.ColumnName;
                         entity.SetColumnValue(columnName, propertyValue);
                     }
-                }                
+                }
             }
 
             if (entity.StoringState == StoringObjectState.Changed || this.BpmId == Guid.Empty)
             {
-                entity.SetColumnValue("ModifiedOn", DateTime.Now);
                 success = entity.Save(true);
             }
             else
             {
                 success = true;
             }
+
+            this.CreatedOn = entity.GetColumnValue("CreatedOn").ToString();
+            this.ModifiedOn = entity.GetColumnValue("ModifiedOn").ToString();
             this.BpmId = (Guid)entity.GetColumnValue("Id");
             return success;
         }
 
-        public List<T> GetFromDatabase(SearchFilter searchFilter)
+        public List<T> GetFromDatabase(SearchFilter searchFilter, Dictionary<string, string> searchableColumns = null)
         {
             var result = new List<T>();
 
@@ -225,6 +229,8 @@ namespace Terrasoft.Configuration.OneCBaseEntity
             var selectQuery = new Select(UserConnection)
                 .Column(EntityName, "Id")
                 .Column(EntityName, "GenID1C")
+                .Column(EntityName, nameof(ModifiedOn))
+                .Column(EntityName, nameof(CreatedOn))
                 .From(EntityName) as Select;
             foreach (PropertyInfo property in properties)
             {
@@ -234,14 +240,26 @@ namespace Terrasoft.Configuration.OneCBaseEntity
                 string joinColumn = attribute.JoinColumn;
 
                 selectQuery = selectQuery.Column(tableName, columnName).As(attribute.ColumnFullName);
-                if(joinColumn != null)
+                if (joinColumn != null)
                 {
                     selectQuery = selectQuery.LeftOuterJoin(tableName)
                     .On(tableName, "Id").IsEqual(EntityName, joinColumn) as Select;
                 }
             }
 
-            selectQuery = GetItemByFilters(selectQuery, searchFilter);
+            if (searchFilter != null)
+            {
+                selectQuery = GetItemByFilters(selectQuery, searchFilter);
+            }
+
+            if (searchableColumns != null && searchableColumns.Count > 0)
+            {
+                foreach (var searchField in searchableColumns)
+                {
+                    selectQuery = selectQuery.Where(EntityName, searchField.Key).IsEqual(Column.Parameter(searchField.Value)) as Select;
+
+                }
+            }
 
             using (var dbExecutor = UserConnection.EnsureDBConnection())
             {
@@ -263,9 +281,10 @@ namespace Terrasoft.Configuration.OneCBaseEntity
                             }
                         }
 
-                        LocalId = reader.GetValue(reader.GetOrdinal("Id")).ToString() ?? "";
-                        Id1C = reader.GetValue(reader.GetOrdinal("GenID1C")).ToString() ?? "";                       
-
+                        newEntity.LocalId = reader.GetValue(reader.GetOrdinal("Id")).ToString() ?? "";
+                        newEntity.Id1C = reader.GetValue(reader.GetOrdinal("GenID1C")).ToString() ?? "";
+                        newEntity.ModifiedOn = reader.GetDateTime(reader.GetOrdinal(nameof(ModifiedOn))).ToString() ?? "";
+                        newEntity.CreatedOn = reader.GetDateTime(reader.GetOrdinal(nameof(CreatedOn))).ToString() ?? "";
                         result.Add(newEntity);
                     }
                 }

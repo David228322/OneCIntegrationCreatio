@@ -110,7 +110,7 @@ namespace Terrasoft.Configuration.GenOneCInvoice
 
                     this.BpmId = (reader.GetValue(0) != System.DBNull.Value) ? (Guid)reader.GetValue(0) : Guid.Empty;
                     this.LocalId = (reader.GetValue(0) != System.DBNull.Value) ? (string)reader.GetValue(0).ToString() : "";
-                    this.ModifiedOn = dateModified;
+                  //  this.ModifiedOn = dateModified;
                     success = true;
                 }
             }
@@ -224,7 +224,7 @@ namespace Terrasoft.Configuration.GenOneCInvoice
                 success = true;
             }
             this.BpmId = (Guid)entity.GetColumnValue("Id");
-            this.ModifiedOn = now.ToString();
+       //     this.ModifiedOn = now.ToString();
             //TODO: complete this part of code
             /*
             if (this.BPMId != Guid.Empty)
@@ -361,7 +361,7 @@ namespace Terrasoft.Configuration.GenOneCInvoice
                             AmountWithoutTax = (reader.GetValue(11) != System.DBNull.Value) ? (decimal)reader.GetValue(11) : 0,
                             Currency = (reader.GetValue(12) != System.DBNull.Value) ? (string)reader.GetValue(12) : "",
                             Status = (reader.GetValue(13) != System.DBNull.Value) ? (string)reader.GetValue(13) : "",
-                            ModifiedOn = dateModified,
+                 //           ModifiedOn = dateModified,
                         });
                     }
                 }
