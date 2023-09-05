@@ -28,43 +28,53 @@ namespace Terrasoft.Configuration.GenOneCInvoice
     [DataContract]
     public sealed class OneCInvoice : OneCBaseEntity<OneCInvoice>
     {
-        [DataMember(Name = "Status")]
-        public string Status { get; set; }
         [DataMember(Name = "Number")]
+        [DatabaseColumn("Invoice", nameof(Number))]
         public string Number { get; set; }
+
         [DataMember(Name = "StartDate")]
+        [DatabaseColumn("Invoice", nameof(StartDate))]
         public string StartDate { get; set; }
+
         [DataMember(Name = "Notes")]
+        [DatabaseColumn("Invoice", nameof(Notes))]
         public string Notes { get; set; }
 
-        [DataMember(Name = "ContractLocalId")]
-        public string ContractLocalId { get; set; }
-        [DataMember(Name = "AccountLocalId")]
-        public string AccountLocalId { get; set; }
-        [DataMember(Name = "OrderLocalId")]
-        public string OrderLocalId { get; set; }
-        [DataMember(Name = "OwnerLocalId")]
-        public string OwnerLocalId { get; set; }
-
         [DataMember(Name = "DueDate")]
+        [DatabaseColumn("Invoice", nameof(DueDate))]
         public string DueDate { get; set; }
 
         [DataMember(Name = "Amount")]
+        [DatabaseColumn("Invoice", nameof(Amount))]
         public decimal Amount { get; set; }
+
         [DataMember(Name = "AmountWithoutTax")]
+        [DatabaseColumn("Invoice", nameof(AmountWithoutTax))]
         public decimal AmountWithoutTax { get; set; }
+
+
+        [DataMember(Name = "ContractLocalId")]
+        [DatabaseColumn("Invoice", "ContractId")]
+        public Guid ContractLocalId { get; set; }
+
+        [DataMember(Name = "AccountLocalId")]
+        [DatabaseColumn("Invoice", "AccountId")]
+        public Guid AccountLocalId { get; set; }
+
+        [DataMember(Name = "OrderLocalId")]
+        [DatabaseColumn("Invoice", "OrderId")]
+        public Guid OrderLocalId { get; set; }
+
+        [DataMember(Name = "OwnerLocalId")]
+        [DatabaseColumn("Invoice", "OwnerId")]
+        public Guid OwnerLocalId { get; set; }
+
         [DataMember(Name = "Currency")]
+        [DatabaseColumn("Currency", "ShortName", "CurrencyId")]
         public string Currency { get; set; }
 
         [DataMember(Name = "Products")]
         public List<OneCInvoiceProduct> Products { get; set; }
-        /*
-        [DataMember(Name = "AdditionalServices")]
-        public List<OneCInvoiceAdditionalServices> AdditionalServices { get; set; }
-        [DataMember(Name = "AutomaticDiscount")]
-        public List<OneCInvoiceAutomaticDiscount> AutomaticDiscount { get; set; }
-        [DataMember(Name = "InvoicePaid")]
-        public List<OneCInvoicePaid> InvoicePaid { get; set; } */
 
         public OneCBaseEntity<OneCInvoice> ProcessRemoteItem(bool isFull = true)
         {
@@ -73,308 +83,53 @@ namespace Terrasoft.Configuration.GenOneCInvoice
 
         public override bool ResolveRemoteItem()
         {
-            if (string.IsNullOrEmpty(this.LocalId) && string.IsNullOrEmpty(this.Id1C))
-            {
-                return false;
-            }
-
-            bool success = false;
-
-            Select selCol = new Select(UserConnection)
+            Select selectQuery = new Select(UserConnection)
                 .Column("Invoice", "Id").Top(1)
-                .Column("Invoice", "ModifiedOn")
                 .From("Invoice").As("Invoice")
                 as Select;
 
-            if (!string.IsNullOrEmpty(this.LocalId))
-            {
-                selCol = selCol.Where("Invoice", "Id").IsEqual(Column.Parameter(new Guid(this.LocalId))) as Select;
-            }
-            else if (!string.IsNullOrEmpty(this.Id1C))
-            {
-                selCol = selCol.Where("Invoice", "GenID1C").IsEqual(Column.Parameter(this.Id1C)) as Select;
-            }
-            else
-            {
-                return false;
-            }
-
-            using (var dbExecutor = UserConnection.EnsureDBConnection())
-            using (var reader = selCol.ExecuteReader(dbExecutor))
-            {
-                if (reader.Read())
-                {
-                    string dateModified = (reader.GetValue(1) != System.DBNull.Value) ? (string)reader.GetValue(1).ToString() : "";
-                    if (!string.IsNullOrEmpty(dateModified))
-                        dateModified = DateTime.Parse(dateModified).ToLocalTime().ToString();
-
-                    this.BpmId = (reader.GetValue(0) != System.DBNull.Value) ? (Guid)reader.GetValue(0) : Guid.Empty;
-                    this.LocalId = (reader.GetValue(0) != System.DBNull.Value) ? (string)reader.GetValue(0).ToString() : "";
-                  //  this.ModifiedOn = dateModified;
-                    success = true;
-                }
-            }
-
-            return success;
+            return base.ResolveRemoteItemByQuery(selectQuery);
         }
 
 
         public override bool SaveRemoteItem()
         {
-            bool success = false;
-            var oneCHelper = new OneCIntegrationHelper();
-            Guid country = Guid.Empty;
-            Guid contract = Guid.Empty;
-            Guid currency = Guid.Empty;
-            Guid status = Guid.Empty;
+             base.SaveToDatabase();
+             if (this.BpmId != Guid.Empty)
+             {
+                 if (this.Products != null && this.Products.Count > 0)
+                 {
+                    var oneCHelper = new OneCIntegrationHelper();
+                     List<string> products = oneCHelper.GetList(this.BpmId.ToString(), "InvoiceId", "GenID1C", "InvoiceProduct");
+                     if (products != null && products.Count > 0)
+                     {
+                         foreach (string productId in products)
+                         {
 
-            if (!string.IsNullOrEmpty(this.ContractLocalId) && oneCHelper.CheckId("Contract", this.ContractLocalId))
-            {
-                contract = new Guid(this.ContractLocalId);
-            }
-
-            if (!string.IsNullOrEmpty(this.Currency))
-            {
-                if (this.Currency == "���")
-                    this.Currency = "UAH";
-
-                currency = oneCHelper.GetId("Currency", this.Currency, "ShortName");
-            }
-
-            if (!string.IsNullOrEmpty(this.Status))
-            {
-                status = oneCHelper.GetId("InvoicePaymentStatus", this.Status, "Name");
-            }
-
-            var entity = UserConnection.EntitySchemaManager
-                .GetInstanceByName("Invoice").CreateEntity(UserConnection);
-
-            if (this.BpmId == Guid.Empty)
-            {
-                entity.SetDefColumnValues();
-            }
-            else if (!entity.FetchFromDB(entity.Schema.PrimaryColumn.Name, this.BpmId))
-            {
-                entity.SetDefColumnValues();
-            }
-
-            if (!string.IsNullOrEmpty(this.Id1C))
-            {
-                entity.SetColumnValue("GenID1C", this.Id1C);
-            }
-
-            if (status != Guid.Empty)
-            {
-                entity.SetColumnValue("PaymentStatusId", status);
-            }
-
-            if (!string.IsNullOrEmpty(this.Number))
-            {
-                entity.SetColumnValue("Number", this.Number);
-            }
-
-            if (!string.IsNullOrEmpty(this.StartDate))
-            {
-                entity.SetColumnValue("StartDate", DateTime.Parse(this.StartDate));
-            }
-
-            if (contract != Guid.Empty)
-            {
-                entity.SetColumnValue("ContractId", contract);
-            }
-
-            if (!string.IsNullOrEmpty(this.OrderLocalId) && this.OrderLocalId != "00000000-0000-0000-0000-000000000000" && oneCHelper.CheckId("Order", this.OrderLocalId))
-            {
-                entity.SetColumnValue("OrderId", new Guid(this.OrderLocalId));
-            }
-
-            if (!string.IsNullOrEmpty(this.DueDate))
-            {
-                entity.SetColumnValue("DueDate", DateTime.Parse(this.DueDate));
-            }
-
-            if (!string.IsNullOrEmpty(this.Notes))
-            {
-                entity.SetColumnValue("Notes", this.Notes);
-            }
-
-            if (this.Amount > 0)
-            {
-                entity.SetColumnValue("Amount", this.Amount);
-            }
-
-            if (this.AmountWithoutTax > 0)
-            {
-                entity.SetColumnValue("AmountWithoutTax", this.AmountWithoutTax);
-            }
-
-            if (currency != Guid.Empty)
-            {
-                entity.SetColumnValue("CurrencyId", currency);
-            }
-
-            var now = DateTime.Now;
-            if (entity.StoringState == StoringObjectState.Changed || this.BpmId == Guid.Empty)
-            {
-                entity.SetColumnValue("ModifiedOn", now);
-                success = entity.Save(true);
-            }
-            else
-            {
-                success = true;
-            }
-            this.BpmId = (Guid)entity.GetColumnValue("Id");
-       //     this.ModifiedOn = now.ToString();
-            //TODO: complete this part of code
-            /*
-            if (this.BPMId != Guid.Empty)
-            {
-                if (this.Products != null && this.Products.Count > 0)
-                {
-                    List<string> _products = oneCHelper.GetList(this.BPMId.ToString(), "InvoiceId", "GenID1C", "InvoiceProduct");
-                    if (_products != null && _products.Count > 0)
-                    {
-                        foreach (string _productId in _products)
-                        {
-
-                            if (this.Products.Exists(x => x.ID1C == _productId) == false)
-                            {
-                                oneCHelper.delItem(_productId, "GenID1C", this.BPMId.ToString(), "InvoiceId", "InvoiceProduct");
-                            }
-                        }
-                    }
-
-                    foreach (var product in this.Products)
-                    {
-                        product.InvoiceId = this.BPMId;
-                        product.ProcessRemoteItem();
-                    }
-                }
-
-                if (this.AdditionalServices != null && this.AdditionalServices.Count > 0)
-                {
-                    List<string> _additionServices = oneCHelper.GetList(this.BPMId.ToString(), "GenInvoiceId", "GenID1C", "GenAdditionalServicesInv");
-                    if (_additionServices != null && _additionServices.Count > 0)
-                    {
-                        foreach (string _additionServiceId in _additionServices)
-                        {
-
-                            if (this.AdditionalServices.Exists(x => x.ID1C == _additionServiceId) == false)
-                            {
-                                oneCHelper.delItem(_additionServiceId, "GenID1C", this.BPMId.ToString(), "GenInvoiceId", "GenAdditionalServicesInv");
-                            }
-                        }
-                    }
-
-                    foreach (var service in this.AdditionalServices)
-                    {
-                        service.InvoiceId = this.BPMId;
-                        service.ProcessRemoteItem();
-                    }
-                }
-
-                if (this.AutomaticDiscount != null && this.AutomaticDiscount.Count > 0)
-                {
-                    foreach (var discount in this.AutomaticDiscount)
-                    {
-                        discount.InvoiceId = this.BPMId;
-                        discount.ProcessRemoteItem();
-                    }
-                }
-
-                if (this.InvoicePaid != null && this.InvoicePaid.Count > 0)
-                {
-                    foreach (var paid in this.InvoicePaid)
-                    {
-                        paid.InvoiceLocalId = this.BPMId.ToString();
-                        paid.ProcessRemoteItem();
-                    }
-                }
-            } */
-
-            return success;
+                             if (this.Products.Exists(x => x.Id1C == productId) == false)
+                             {
+                                 oneCHelper.DelItem(productId, "GenID1C", this.BpmId.ToString(), "InvoiceId", "InvoiceProduct");
+                             }
+                         }
+                     }
+                     foreach (var product in this.Products)
+                     {
+                         product.InvoiceId = this.BpmId;
+                         product.ProcessRemoteItem();
+                     }
+                 }            
+             }
+            return true;
         }
 
         public override List<OneCInvoice> GetItem(SearchFilter searchFilter)
         {
-            List<OneCInvoice> result = new List<OneCInvoice>();
-            /*
-             OneCInvoiceAdditionalServices _additionalServices = new OneCInvoiceAdditionalServices();
-             OneCInvoiceAutomaticDiscount _automaticDiscount = new OneCInvoiceAutomaticDiscount();
-             OneCInvoicePaid _invoicePaid = new OneCInvoicePaid(); */
-            Select selCon = new Select(UserConnection)
-                .Column("Invoice", "Id")
-                .Column("Invoice", "GenID1C")
-                .Column("Invoice", "Number")
-                .Column("Invoice", "StartDate")
-                .Column("Invoice", "ContractId")
-                .Column("Invoice", "AccountId")
-                .Column("Invoice", "OwnerId")
-                .Column("Invoice", "OrderId")
-                .Column("Invoice", "DueDate")
-                .Column("Invoice", "Notes")
-                .Column("Invoice", "Amount")
-                .Column("Invoice", "AmountWithoutTax")
-                .Column("Currency", "ShortName")
-                .Column("InvoicePaymentStatus", "Name")
-                .Column("Invoice", "ModifiedOn")
-                .From("Invoice").As("Invoice")
-                .LeftOuterJoin("Account").As("Account")
-                    .On("Account", "Id").IsEqual("Invoice", "AccountId")
-                .LeftOuterJoin("Contract").As("Contract")
-                    .On("Contract", "Id").IsEqual("Invoice", "ContractId")
-                .LeftOuterJoin("Contact").As("C1")
-                    .On("C1", "Id").IsEqual("Invoice", "OwnerId")
-                .LeftOuterJoin("Currency").As("Currency")
-                    .On("Currency", "Id").IsEqual("Invoice", "CurrencyId")
-                .LeftOuterJoin("InvoicePaymentStatus")
-                    .On("InvoicePaymentStatus", "Id").IsEqual("Invoice", "PaymentStatusId")
-            as Select;
+            var result = base.GetFromDatabase(searchFilter);
 
-            selCon = base.GetItemByFilters(selCon, searchFilter);
-
-            using (var dbExecutor = UserConnection.EnsureDBConnection())
-            {
-                using (var reader = selCon.ExecuteReader(dbExecutor))
-                {
-                    while (reader.Read())
-                    {
-                        var dateModified = (reader.GetValue(14) != System.DBNull.Value) ? (string)reader.GetValue(14).ToString() : "";
-                        if (!string.IsNullOrEmpty(dateModified))
-                        {
-                            dateModified = DateTime.Parse(dateModified).ToLocalTime().ToString();
-                        }
-
-                        result.Add(new OneCInvoice()
-                        {
-                            LocalId = (reader.GetValue(0) != System.DBNull.Value) ? (string)reader.GetValue(0).ToString() : "",
-                            Id1C = (reader.GetValue(1) != System.DBNull.Value) ? (string)reader.GetValue(1) : "",
-                            Number = (reader.GetValue(2) != System.DBNull.Value) ? (string)reader.GetValue(2) : "",
-                            StartDate = (reader.GetValue(3) != System.DBNull.Value) ? (string)reader.GetValue(3).ToString() : "",
-                            ContractLocalId = (reader.GetValue(4) != System.DBNull.Value) ? (string)reader.GetValue(4).ToString() : "",
-                            AccountLocalId = (reader.GetValue(5) != System.DBNull.Value) ? (string)reader.GetValue(5).ToString() : "",
-                            OwnerLocalId = (reader.GetValue(6) != System.DBNull.Value) ? (string)reader.GetValue(6).ToString() : "",
-                            OrderLocalId = (reader.GetValue(7) != System.DBNull.Value) ? (string)reader.GetValue(7).ToString() : "",
-                            DueDate = (reader.GetValue(8) != System.DBNull.Value) ? (string)reader.GetValue(8).ToString() : "",
-                            Notes = (reader.GetValue(9) != System.DBNull.Value) ? (string)reader.GetValue(9) : "",
-                            Amount = (reader.GetValue(10) != System.DBNull.Value) ? (decimal)reader.GetValue(10) : 0,
-                            AmountWithoutTax = (reader.GetValue(11) != System.DBNull.Value) ? (decimal)reader.GetValue(11) : 0,
-                            Currency = (reader.GetValue(12) != System.DBNull.Value) ? (string)reader.GetValue(12) : "",
-                            Status = (reader.GetValue(13) != System.DBNull.Value) ? (string)reader.GetValue(13) : "",
-                 //           ModifiedOn = dateModified,
-                        });
-                    }
-                }
-            }
-
-            //TODO: Get Products, AdditionalServices, AutomaticDiscount, InvoicePaid
             OneCInvoiceProduct invoiceProducts = new OneCInvoiceProduct();
             foreach (var inv in result)
             {
                 inv.Products = invoiceProducts.GetItem(inv.LocalId);
-               /* inv.AdditionalServices = _additionalServices.getItem(inv.LocalId);
-                inv.AutomaticDiscount = _automaticDiscount.getItem(inv.LocalId);
-                inv.InvoicePaid = _invoicePaid.getItem(inv.LocalId); */
             }
             
             return result;

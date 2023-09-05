@@ -128,23 +128,46 @@ namespace Terrasoft.Configuration.OneCBaseEntity
 
             if (!string.IsNullOrEmpty(LocalId))
             {
-                selectQuery = selectQuery.Where(EntityName, "Id").IsEqual(Column.Parameter(new Guid(LocalId))) as Select;
+                if(selectQuery.HasCondition)
+                {
+                    selectQuery = selectQuery.And(EntityName, "Id").IsEqual(Column.Parameter(new Guid(LocalId))) as Select;
+                }
+                else
+                {
+                    selectQuery = selectQuery.Where(EntityName, "Id").IsEqual(Column.Parameter(new Guid(LocalId))) as Select;
+                }
             }
             else if (!string.IsNullOrEmpty(Id1C))
             {
-                selectQuery = selectQuery.Where(EntityName, "GenID1C").IsEqual(Column.Parameter(Id1C)) as Select;
+                if(selectQuery.HasCondition)
+                {
+                    selectQuery = selectQuery.And(EntityName, "GenID1C").IsEqual(Column.Parameter(Id1C)) as Select;
+                }
+                else
+                {
+                    selectQuery = selectQuery.Where(EntityName, "GenID1C").IsEqual(Column.Parameter(Id1C)) as Select;
+                }
             }
             else
             {
                 return false;
             }
 
-            var entityId = selectQuery.ExecuteScalar<Guid>();
-            if (entityId != Guid.Empty)
+            try
             {
-                BpmId = entityId;
-                success = true;
+                var entityId = selectQuery.ExecuteScalar<Guid>();
+                if (entityId != Guid.Empty)
+                {
+                    BpmId = entityId;
+                    success = true;
+                }
             }
+            catch (System.Exception ex)
+            {
+                var result = ex.Message;
+                throw;
+            }
+            
 
             return success;
         }
@@ -178,17 +201,22 @@ namespace Terrasoft.Configuration.OneCBaseEntity
             .ToArray();
 
             foreach (PropertyInfo property in properties)
-            {
-                DatabaseColumnAttribute attribute = property.GetCustomAttribute<DatabaseColumnAttribute>();
+            {                
+                var propertyValue = property.GetValue(this);                
 
-                var propertyValue = property.GetValue(this);
                 if (propertyValue != null && propertyValue.ToString() != "00000000-0000-0000-0000-000000000000")
                 {
+                    string[] formats = { "yyyy-MM-ddTHH:mm:ss.fff", "dd.MM.yyyy" };
+                    if (DateTime.TryParseExact(propertyValue.ToString(), formats, CultureInfo.InvariantCulture, DateTimeStyles.None, out DateTime dateTimeValue))
+                    {
+                        propertyValue = dateTimeValue;
+                    }
+
+                    DatabaseColumnAttribute attribute = property.GetCustomAttribute<DatabaseColumnAttribute>();
                     string joinColumn = attribute.JoinColumn;
                     if (joinColumn != null)
                     {
-                        string tableName = attribute.TableName;
-                        var valueFromDatabase = oneCHelper.GetId(tableName, propertyValue.ToString());
+                        var valueFromDatabase = oneCHelper.GetId(attribute.TableName, propertyValue.ToString(), attribute.ColumnName);
                         if (valueFromDatabase != null)
                         {
                             entity.SetColumnValue(joinColumn, valueFromDatabase);
@@ -204,7 +232,15 @@ namespace Terrasoft.Configuration.OneCBaseEntity
 
             if (entity.StoringState == StoringObjectState.Changed || this.BpmId == Guid.Empty)
             {
-                success = entity.Save(true);
+                try
+                {
+                    success = entity.Save(true);
+                }
+                catch (System.Exception ex)
+                {
+
+                    throw;
+                }                
             }
             else
             {
@@ -277,7 +313,14 @@ namespace Terrasoft.Configuration.OneCBaseEntity
                             if (!reader.IsDBNull(columnIndex))
                             {
                                 object columnValue = reader.GetValue(columnIndex);
-                                property.SetValue(newEntity, columnValue);
+                                if (columnValue is DateTime)
+                                {
+                                    property.SetValue(newEntity, columnValue.ToString());
+                                }
+                                else
+                                {
+                                    property.SetValue(newEntity, columnValue);
+                                }                                
                             }
                         }
 

@@ -22,6 +22,7 @@ namespace Terrasoft.Configuration.GenOneCAccount
     using Terrasoft.Configuration.GenOneCSvcIntegration;
     using Terrasoft.Configuration.GenOneCIntegrationHelper;
     using Terrasoft.Configuration.OneCBaseEntity;
+    using Terrasoft.Configuration.GenOneCAccountAddress;
 
     [DataContract]
     public sealed class OneCAccount : OneCBaseEntity<OneCAccount>
@@ -80,52 +81,6 @@ namespace Terrasoft.Configuration.GenOneCAccount
               }
           
             return result;
-        }
-    }
-
-    [DataContract]
-    public sealed class OneCAccountAddress : OneCBaseEntity<OneCAccountAddress>
-    {
-        [DataMember(Name = "Address")]
-        [DatabaseColumn("AccountAddress", nameof(Address))]
-        public string Address { get; set; }
-
-        [DataMember(Name = "Primary")]
-        [DatabaseColumn("AccountAddress", nameof(Primary))]
-        public bool Primary { get; set; }
-
-        [DataMember(Name = "AccountId")]
-        [DatabaseColumn("AccountAddress", nameof(AccountId))]
-        public Guid AccountId { get; set; }
-
-        public OneCBaseEntity<OneCAccountAddress> ProcessRemoteItem(bool isFull = true)
-        {
-            return base.ProcessRemoteItem(isFull);
-        }
-
-        public override bool ResolveRemoteItem()
-        {
-            var selEntity = new Select(UserConnection)
-                .Column("AccountAddress", "Id").Top(1)
-                .From("AccountAddress").As("AccountAddress")
-            as Select;
-
-            return base.ResolveRemoteItemByQuery(selEntity);
-        }
-
-        public override bool SaveRemoteItem()
-        {
-            return base.SaveToDatabase();
-        }
-
-        public List<OneCAccountAddress> GetItem(SearchFilter searchFilter, string accountId)
-        {
-            return base.GetFromDatabase(searchFilter, new Dictionary<string, string> { { "AccountId", accountId } });
-        }
-
-        public override List<OneCAccountAddress> GetItem(SearchFilter searchFilter)
-        {
-            return base.GetFromDatabase(searchFilter);
         }
     }
 }
