@@ -1,4 +1,4 @@
-namespace Terrasoft.Configuration.GenOneCContract
+namespace Terrasoft.Configuration.GenOneCSpecificationInProduct
 {
     using System.Collections.Generic;
     using System.ServiceModel;
@@ -19,36 +19,32 @@ namespace Terrasoft.Configuration.GenOneCContract
     using Terrasoft.Common;
     using System.Globalization;
 
-    using Terrasoft.Configuration.GenIntegrationLogHelper;
     using Terrasoft.Configuration.GenOneCSvcIntegration;
     using Terrasoft.Configuration.GenOneCIntegrationHelper;
     using Terrasoft.Configuration.OneCBaseEntity;
 
     [DataContract]
-    public sealed class OneCContract : OneCBaseEntity<OneCContract>
+    public class OneCSpecificationInProduct : OneCBaseEntity<OneCSpecificationInProduct>
     {
-        [DataMember(Name = "Number")]
-        [DatabaseColumn("Contract", nameof(Number))]
-        public string Number { get; set; }
+        [DataMember(Name = "StringValue")]
+        [DatabaseColumn("SpecificationInProduct", nameof(StringValue))]
+        public string StringValue { get; set; }
 
-        [DataMember(Name = "Type")]
-        [DatabaseColumn("ContractType", "Name", "TypeId")]
-        public string Type { get; set; }
+        [DataMember(Name = "ProductId")]
+        [DatabaseColumn("SpecificationInProduct", nameof(ProductId))]
+        public Guid ProductId { get; set; }
 
-        [DataMember(Name = "ContactId")]
-        [DatabaseColumn("Contract", nameof(ContactId))]
-        public Guid ContactId { get; set; }
-
-        public OneCBaseEntity<OneCContract> ProcessRemoteItem(bool isFull = true)
+        public OneCBaseEntity<OneCSpecificationInProduct> ProcessRemoteItem(bool isFull = true)
         {
             return base.ProcessRemoteItem(isFull);
         }
 
         public override bool ResolveRemoteItem()
         {
-            var selEntity = new Select(UserConnection)
-                .Column("Contract", "Id").Top(1)
-                .From("Contract").As("Contract") as Select;
+            Select selEntity = new Select(UserConnection)
+                .Column("SpecificationInProduct", "Id").Top(1)
+                .From("SpecificationInProduct").As("SpecificationInProduct")
+            as Select;
 
             return base.ResolveRemoteItemByQuery(selEntity);
         }
@@ -59,10 +55,15 @@ namespace Terrasoft.Configuration.GenOneCContract
             return true;
         }
 
-        public override List<OneCContract> GetItem(SearchFilter searchFilter)
+        public override List<OneCSpecificationInProduct> GetItem(SearchFilter searchFilter)
         {
             var result = base.GetFromDatabase(searchFilter);
             return result;
+        }
+
+        public List<OneCSpecificationInProduct> GetItem(string productId)
+        {
+            return base.GetFromDatabase(null, new Dictionary<string, string>() { { "ProductId", productId } });
         }
     }
 }

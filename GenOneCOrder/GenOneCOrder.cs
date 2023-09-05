@@ -67,8 +67,6 @@ namespace Terrasoft.Configuration.GenOneCOrder
 
         [DataMember(Name = "OrderProducts")]
         public List<OneCOrderProduct> OrderProducts { get; set; }
-        [IgnoreDataMember]
-        public List<OneCProduct> OneCProducts { get; set; } = new List<OneCProduct>();
 
         public OneCBaseEntity<OneCOrder> ProcessRemoteItem(bool isFull = true)
         {
@@ -87,143 +85,34 @@ namespace Terrasoft.Configuration.GenOneCOrder
 
         public override bool SaveRemoteItem()
         {
-            bool success = false;
-            var oneCHelper = new OneCIntegrationHelper();
-            Guid contactId = Guid.Empty;
-            Guid accountId = Guid.Empty;
-            /*
-            if (!string.IsNullOrEmpty(this.AccountId))
+            base.SaveToDatabase();
+            
+            if (this.BpmId != Guid.Empty)
             {
-                accountId = oneCHelper.GetId("Account", this.AccountId);
-            }
-
-            if (!string.IsNullOrEmpty(this.ContactId))
-            {
-                contactId = oneCHelper.GetId("Contact", this.ContactId);
-            }
-            */
-            var entity = UserConnection.EntitySchemaManager
-                .GetInstanceByName("Order").CreateEntity(UserConnection);
-
-            if (base.BpmId == Guid.Empty)
-            {
-                entity.SetDefColumnValues();
-            }
-            else if (!entity.FetchFromDB(entity.Schema.PrimaryColumn.Name, base.BpmId))
-            {
-                entity.SetDefColumnValues();
-            }
-
-            if (!string.IsNullOrEmpty(base.Id1C))
-            {
-                entity.SetColumnValue("GenID1C", base.Id1C);
-            }
-
-            if (!string.IsNullOrEmpty(this.Number))
-            {
-                entity.SetColumnValue("Number", this.Number);
-            }
-
-            if (accountId != Guid.Empty)
-            {
-                entity.SetColumnValue("AccountId", accountId);
-            }
-
-            if (accountId != Guid.Empty)
-            {
-                entity.SetColumnValue("ContactId", contactId);
-            }
-
-            if (!string.IsNullOrEmpty(this.Comment))
-            {
-                entity.SetColumnValue("Comment", this.Comment);
-            }
-
-            if (this.Amount > 0)
-            {
-                entity.SetColumnValue("Amount", this.Amount);
-            }
-
-            var now = DateTime.Now;
-            if (entity.StoringState == StoringObjectState.Changed || this.BpmId == Guid.Empty)
-            {
-                entity.SetColumnValue("ModifiedOn", now);
-                success = entity.Save(true);
-            }
-            else
-            {
-                success = true;
-            }
-            this.BpmId = (Guid)entity.GetColumnValue("Id");
-            this.ModifiedOn = now.ToString();
-
-            /*
-            if (this.BPMId != Guid.Empty)
-            {
-                if (this.Products != null && this.Products.Count > 0)
+                if (this.OrderProducts != null && this.OrderProducts.Count > 0)
                 {
-                    List<string> products = oneCHelper.GetList(this.BpmId.ToString(), "OrderId", "GenID1C", "OrderProduct");
-                    if (products != null && products.Count > 0)
+                    var oneCHelper = new OneCIntegrationHelper();
+                    List<string> orderProducts = oneCHelper.GetList(this.BpmId.ToString(), "OrderId", "GenID1C", "OrderProduct");
+                    if (orderProducts != null && orderProducts.Count > 0)
                     {
-                        foreach (string productId in products)
+                        foreach (string productId in orderProducts)
                         {
 
-                            if (this.Products.Exists(x => x.Id1C == productId) == false)
+                            if (this.OrderProducts.Exists(x => x.Id1C == productId) == false)
                             {
-                                oneCHelper.delItem(productId, "GenID1C", this.BPMId.ToString(), "OrderId", "OrderProduct");
+                                oneCHelper.DelItem(productId, "GenID1C", this.BpmId.ToString(), "OrderId", "OrderProduct");
                             }
                         }
                     }
 
-                    foreach (var product in this.Products)
+                    foreach (var product in this.OrderProducts)
                     {
-                        product.OrderId = this.BPMId;
+                        product.OrderId = this.BpmId;
                         product.ProcessRemoteItem();
                     }
-                }
-
-                if (this.AdditionalServices != null && this.AdditionalServices.Count > 0)
-                {
-                    List<string> _additionServices = oneCHelper.GetList(this.BPMId.ToString(), "GenOrderId", "GenID1C", "GenAdditionalServices");
-                    if (_additionServices != null && _additionServices.Count > 0)
-                    {
-                        foreach (string _additionServiceId in _additionServices)
-                        {
-
-                            if (this.AdditionalServices.Exists(x => x.ID1C == _additionServiceId) == false)
-                            {
-                                oneCHelper.delItem(_additionServiceId, "GenID1C", this.BPMId.ToString(), "GenOrderId", "GenAdditionalServices");
-                            }
-                        }
-                    }
-
-                    foreach (var service in this.AdditionalServices)
-                    {
-                        service.OrderId = this.BPMId;
-                        service.ProcessRemoteItem();
-                    }
-                }
-
-                if (this.AutomaticDiscount != null && this.AutomaticDiscount.Count > 0)
-                {
-                    foreach (var discount in this.AutomaticDiscount)
-                    {
-                        discount.OrderId = this.BPMId;
-                        discount.ProcessRemoteItem();
-                    }
-                }
-
-                if (this.OrderPaid != null && this.OrderPaid.Count > 0)
-                {
-                    foreach (var paid in this.OrderPaid)
-                    {
-                        paid.OrderLocalId = this.BPMId.ToString();
-                        paid.ProcessRemoteItem();
-                    }
-                }
-            } */
-
-            return success;
+                }  
+            }
+            return true;
         }
 
         public override List<OneCOrder> GetItem(SearchFilter searchFilter)
