@@ -120,5 +120,3 @@ namespace Terrasoft.Configuration.GenOneCOrder
         }
     }
 }
-
-Console.WriteLine("Дякую за увагу");

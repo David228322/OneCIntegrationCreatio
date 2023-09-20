@@ -163,16 +163,40 @@ namespace Terrasoft.Configuration.OneCBaseEntity
 
         public IDataReader ExecuteReader(DBExecutor dBExecutor)
         {
-            IDataReader dataReader = selectQuery.ExecuteReader(dBExecutor);
-            Reset();
-            return dataReader;
+            try
+            {
+                IDataReader dataReader = selectQuery.ExecuteReader(dBExecutor);
+                Reset();
+                return dataReader;
+            }
+            catch (System.Exception ex)
+            {
+                LogHelper.Log(_userConnection,
+                    LogHelper.LogResult.Error,
+                    $"{nameof(ExecuteReader)}: {ex.Message}",
+                    LogHelper.IntegrationDirection.Import);
+
+                throw ex;
+            }            
         }
 
         public T BuildAndExecuteScalar<T>()
         {
-            var result = selectQuery.ExecuteScalar<T>();
-            Reset();
-            return result;
+            try
+            {
+                var result = selectQuery.ExecuteScalar<T>();
+                Reset();
+                return result;
+            }
+            catch (System.Exception ex)
+            {
+                LogHelper.Log(_userConnection, 
+                    LogHelper.LogResult.Error, 
+                    $"{nameof(BuildAndExecuteScalar)}: {ex.Message}", 
+                    LogHelper.IntegrationDirection.Import);
+
+                throw ex;
+            }            
         }
 
         public void Reset()

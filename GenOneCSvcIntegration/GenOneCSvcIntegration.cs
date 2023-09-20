@@ -66,7 +66,7 @@ namespace Terrasoft.Configuration.GenOneCSvcIntegration
                 result.Error = ex.Message;
 
                 LogHelper.Log(UserConnection, LogHelper.LogResult.Error, "SetOneCOrder" + ex.Message, stopwatch, LogHelper.IntegrationDirection.Import, orderRequest);
-                throw new Exception(ex.Message);
+                throw;
             }
             LogHelper.Log(UserConnection, LogHelper.LogResult.Ok, "SetOneCOrder", stopwatch, LogHelper.IntegrationDirection.Import, orderRequest);
 
@@ -110,7 +110,7 @@ namespace Terrasoft.Configuration.GenOneCSvcIntegration
                 result.Error = ex.Message;
 
                 LogHelper.Log(UserConnection, LogHelper.LogResult.Error, "SetOneCOrder" + ex.Message, stopwatch, LogHelper.IntegrationDirection.Import, invoiceRequest);
-                throw new Exception(ex.Message);
+                throw;
             }
             LogHelper.Log(UserConnection, LogHelper.LogResult.Ok, "SetOneCOrder", stopwatch, LogHelper.IntegrationDirection.Import, invoiceRequest);
 
@@ -154,7 +154,7 @@ namespace Terrasoft.Configuration.GenOneCSvcIntegration
                 result.Error = ex.Message;
 
                 LogHelper.Log(UserConnection, LogHelper.LogResult.Error, "SetOneCProduct" + ex.Message, stopwatch, LogHelper.IntegrationDirection.Import, productRequest);
-                throw new Exception(ex.Message);
+                throw;
             }
             LogHelper.Log(UserConnection, LogHelper.LogResult.Ok, "SetOneCProduct", stopwatch, LogHelper.IntegrationDirection.Import, productRequest);
 
@@ -187,7 +187,7 @@ namespace Terrasoft.Configuration.GenOneCSvcIntegration
                 result.Error = ex.Message;
 
                 LogHelper.Log(UserConnection, LogHelper.LogResult.Error, "SetOneCContact" + ex.Message, stopwatch, LogHelper.IntegrationDirection.Import, contactRequest);
-                throw new Exception(ex.Message);
+                throw;
             }
             LogHelper.Log(UserConnection, LogHelper.LogResult.Ok, "SetOneCContact", stopwatch, LogHelper.IntegrationDirection.Import, contactRequest);
 
@@ -231,7 +231,7 @@ namespace Terrasoft.Configuration.GenOneCSvcIntegration
                 result.Error = ex.Message;
 
                 LogHelper.Log(UserConnection, LogHelper.LogResult.Error, "SetOneCAccount" + ex.Message, stopwatch, LogHelper.IntegrationDirection.Import, accountRequest);
-                throw new Exception(ex.Message);
+                throw;
             }
             LogHelper.Log(UserConnection, LogHelper.LogResult.Ok, "SetOneCAccount", stopwatch, LogHelper.IntegrationDirection.Import, accountRequest);
 
@@ -275,7 +275,7 @@ namespace Terrasoft.Configuration.GenOneCSvcIntegration
                 result.Error = ex.Message;
 
                 LogHelper.Log(UserConnection, LogHelper.LogResult.Error, "SetOneCContract" + ex.Message, stopwatch, LogHelper.IntegrationDirection.Import, contractRequest);
-                throw new Exception(ex.Message);
+                throw;
             }
             LogHelper.Log(UserConnection, LogHelper.LogResult.Ok, "SetOneCContract", stopwatch, LogHelper.IntegrationDirection.Import, contractRequest);
 

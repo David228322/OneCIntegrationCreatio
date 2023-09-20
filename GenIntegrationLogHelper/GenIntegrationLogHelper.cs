@@ -25,6 +25,15 @@
             public static readonly Guid Error = new Guid("D62F29E2-A456-48D1-9E36-B01DA3C2ACDD");//	Ошибка
         }
 
+        public static void Log(string logKey, string logValue)
+        {
+            new Insert(UserConnection).Into("GenVariablesIntegrationLog")
+            .Set("Name", Column.Parameter(logKey))
+            .Set("GenValue", Column.Parameter(logValue))
+            .Set("CreatedOn", Column.Parameter(DateTime.UtcNow))
+            .Set("ModifiedOn", Column.Parameter(DateTime.UtcNow))
+            .Execute();
+        }
 
         public static string SerializeToJson(object obj)
         {
@@ -35,7 +44,38 @@
             return JsonConvert.SerializeObject(obj);
         }
 
+        public static void Log(UserConnection userConnection,
+                               LogResult logResult,
+                               string description,
+                               Guid direction
+                               )
+        {
+            if (description == null)
+            {
+                description = string.Empty;
+            }
+            var resultId = Guid.Empty;
+            switch (logResult)
+            {
+                case LogResult.Ok:
+                    resultId = IntegrationResult.Ok;
+                    break;
+                case LogResult.Error:
+                    resultId = IntegrationResult.Error;
+                    break;
+            }
 
+            var integrationLogInsert = new Insert(userConnection).Into("IntegrationLog")
+                .Set("CreatedOn", Column.Parameter(DateTime.UtcNow))
+                .Set("ModifiedOn", Column.Parameter(DateTime.UtcNow))
+                .Set("CreatedById", Column.Parameter(userConnection.CurrentUser.ContactId))
+                .Set("ModifiedById", Column.Parameter(userConnection.CurrentUser.ContactId))
+                .Set("Date", Column.Parameter(DateTime.UtcNow))
+                .Set("DirectionId", Column.Parameter(direction))//IntegrationDirection.IMPORT
+                .Set("ResultId", Column.Parameter(resultId))
+                .Set("Description", Column.Parameter(description));
+            integrationLogInsert.Execute();
+        }
 
         public static void Log(UserConnection userConnection, LogResult logResult,
                 string description, System.Diagnostics.Stopwatch stopWatch, Guid direction, object request)

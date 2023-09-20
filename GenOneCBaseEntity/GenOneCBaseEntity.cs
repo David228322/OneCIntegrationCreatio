@@ -58,7 +58,6 @@ namespace Terrasoft.Configuration.OneCBaseEntity
 
         public OneCBaseEntity<T> ProcessRemoteItem(bool isFull = true)
         {
-            queryBuilder = new OneCQueryBuilder(UserConnection, EntityName);
             bool shouldResolveRemoteItem = (!string.IsNullOrEmpty(this.LocalId) && this.LocalId != "00000000-0000-0000-0000-000000000000") ||
                                (!string.IsNullOrEmpty(this.Id1C) && this.Id1C != "00000000-0000-0000-0000-000000000000");
 
@@ -79,6 +78,7 @@ namespace Terrasoft.Configuration.OneCBaseEntity
 
         protected bool ResolveRemoteItem()
         {
+            queryBuilder = new OneCQueryBuilder(UserConnection, EntityName);
             queryBuilder.FindFirstEntityId();
 
             if (string.IsNullOrEmpty(LocalId) && string.IsNullOrEmpty(Id1C))
@@ -105,10 +105,7 @@ namespace Terrasoft.Configuration.OneCBaseEntity
                 if (entityId != Guid.Empty)
                 {
                     BpmId = entityId;
-                }
-                else
-                {
-                    return false;
+                    return true;
                 }
             }
             catch (System.Exception ex)
@@ -118,7 +115,7 @@ namespace Terrasoft.Configuration.OneCBaseEntity
             }
             
 
-            return true;
+            return false;
         }
 
         public virtual bool SaveRemoteItem()
@@ -205,12 +202,13 @@ namespace Terrasoft.Configuration.OneCBaseEntity
         protected List<T> GetFromDatabase(SearchFilter searchFilter, Dictionary<string, string> searchableColumns = null)
         {
             queryBuilder = new OneCQueryBuilder(UserConnection, EntityName);
+            queryBuilder.AddBaseEntityFields();
+
             Type type = typeof(T);
             PropertyInfo[] properties = type.GetProperties()
             .Where(property => property.GetCustomAttribute<DatabaseColumnAttribute>() != null)
             .ToArray();
 
-            queryBuilder.AddBaseEntityFields();
             foreach (PropertyInfo property in properties)
             {
                 DatabaseColumnAttribute attribute = property.GetCustomAttribute<DatabaseColumnAttribute>();
