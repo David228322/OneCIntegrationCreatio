@@ -67,21 +67,6 @@ namespace Terrasoft.Configuration.GenCOrderProduct
             return base.ProcessRemoteItem(isFull);
         }
 
-        public override bool ResolveRemoteItem()
-        {
-            var selectQuery = new Select(UserConnection)
-                .Column("OrderProduct", "Id").Top(1)
-                .From("OrderProduct")
-                .Where("OrderProduct", "OrderId").IsEqual(Column.Parameter(OrderId)) as Select;
-
-            return base.ResolveRemoteItemByQuery(selectQuery);
-        }
-
-        public override bool SaveRemoteItem()
-        {
-            return base.SaveToDatabase();
-        }
-
         public List<OneCOrderProduct> GetItem(string orderId)
         {
             return base.GetFromDatabase(null, new Dictionary<string,string>() {{"OrderId", orderId}});

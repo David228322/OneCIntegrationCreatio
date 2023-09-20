@@ -51,22 +51,6 @@ namespace Terrasoft.Configuration.GenOneCProductStockBalance
             return base.ProcessRemoteItem(isFull);
         }
 
-        public override bool ResolveRemoteItem()
-        {
-            Select selEntity = new Select(UserConnection)
-                .Column("ProductStockBalance", "Id").Top(1)
-                .From("ProductStockBalance").As("ProductStockBalance")
-            as Select;
-
-            return base.ResolveRemoteItemByQuery(selEntity);
-        }
-
-        public override bool SaveRemoteItem()
-        {
-            base.SaveToDatabase();
-            return true;
-        }
-
         public override List<OneCProductStockBalance> GetItem(SearchFilter searchFilter)
         {
             var result = base.GetFromDatabase(searchFilter);

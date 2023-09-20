@@ -63,24 +63,6 @@ namespace Terrasoft.Configuration.GenOneCInvoiceProduct
             return base.ProcessRemoteItem(isFull);
         }
 
-        public override bool ResolveRemoteItem()
-        {
-            var selectQuery = new Select(UserConnection)
-                .Column("InvoiceProduct", "Id").Top(1)
-                .From("InvoiceProduct")
-                .Where("InvoiceProduct", "InvoiceId").IsEqual(Column.Parameter(this.InvoiceId))
-            as Select;
-
-            return base.ResolveRemoteItemByQuery(selectQuery);
-        }
-
-        public override bool SaveRemoteItem()
-        {
-            base.SaveToDatabase();
-
-            return true;
-        }
-
         public override List<OneCInvoiceProduct> GetItem(SearchFilter searchFilter)
         {
             var result = base.GetFromDatabase(searchFilter);

@@ -47,19 +47,9 @@ namespace Terrasoft.Configuration.GenOneCAccount
             return base.ProcessRemoteItem(isFull);
         }
 
-        public override bool ResolveRemoteItem()
+        public bool SaveRemoteItem()
         {
-            var selEntity = new Select(UserConnection)
-                .Column("Account", "Id").Top(1)
-                .From("Account").As("Account")
-            as Select;
-
-            return base.ResolveRemoteItemByQuery(selEntity);
-        }
-
-        public override bool SaveRemoteItem()
-        {
-            var accounts = base.SaveToDatabase();
+            var accounts = base.SaveRemoteItem();
 
             foreach (var address in Addresses)
             {

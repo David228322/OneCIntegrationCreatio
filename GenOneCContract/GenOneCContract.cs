@@ -44,21 +44,6 @@ namespace Terrasoft.Configuration.GenOneCContract
             return base.ProcessRemoteItem(isFull);
         }
 
-        public override bool ResolveRemoteItem()
-        {
-            var selEntity = new Select(UserConnection)
-                .Column("Contract", "Id").Top(1)
-                .From("Contract").As("Contract") as Select;
-
-            return base.ResolveRemoteItemByQuery(selEntity);
-        }
-
-        public override bool SaveRemoteItem()
-        {
-            base.SaveToDatabase();
-            return true;
-        }
-
         public override List<OneCContract> GetItem(SearchFilter searchFilter)
         {
             var result = base.GetFromDatabase(searchFilter);

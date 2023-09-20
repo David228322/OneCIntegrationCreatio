@@ -81,20 +81,9 @@ namespace Terrasoft.Configuration.GenOneCInvoice
             return base.ProcessRemoteItem(isFull);
         }
 
-        public override bool ResolveRemoteItem()
-        {
-            Select selectQuery = new Select(UserConnection)
-                .Column("Invoice", "Id").Top(1)
-                .From("Invoice").As("Invoice")
-                as Select;
-
-            return base.ResolveRemoteItemByQuery(selectQuery);
-        }
-
-
         public override bool SaveRemoteItem()
         {
-             base.SaveToDatabase();
+             base.SaveRemoteItem();
              if (this.BpmId != Guid.Empty)
              {
                  if (this.Products != null && this.Products.Count > 0)

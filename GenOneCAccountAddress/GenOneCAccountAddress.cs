@@ -42,22 +42,6 @@
         {
             return base.ProcessRemoteItem(isFull);
         }
-
-        public override bool ResolveRemoteItem()
-        {
-            var selEntity = new Select(UserConnection)
-                .Column("AccountAddress", "Id").Top(1)
-                .From("AccountAddress").As("AccountAddress")
-            as Select;
-
-            return base.ResolveRemoteItemByQuery(selEntity);
-        }
-
-        public override bool SaveRemoteItem()
-        {
-            return base.SaveToDatabase();
-        }
-
         public List<OneCAccountAddress> GetItem(SearchFilter searchFilter, string accountId)
         {
             return base.GetFromDatabase(searchFilter, new Dictionary<string, string> { { "AccountId", accountId } });

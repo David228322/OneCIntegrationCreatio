@@ -68,19 +68,9 @@ namespace Terrasoft.Configuration.GenOneCProduct
             return base.ProcessRemoteItem(isFull);
         }
 
-        public override bool ResolveRemoteItem()
-        {
-            var selEntity = new Select(UserConnection)
-                .Column("Product", "Id").Top(1)
-                .From("Product").As("Product")
-            as Select;
-
-            return base.ResolveRemoteItemByQuery(selEntity);
-        }
-
         public override bool SaveRemoteItem()
         {
-            base.SaveToDatabase();
+            base.SaveRemoteItem();
             return true;
 
             if (this.BpmId != Guid.Empty)

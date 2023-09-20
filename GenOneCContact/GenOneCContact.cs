@@ -47,21 +47,6 @@ namespace Terrasoft.Configuration.GenOneCContact
             return base.ProcessRemoteItem(isFull);
         }
 		
-		public override bool ResolveRemoteItem()
-		{
-			var selEntity = new Select(UserConnection)
-				.Column("Contact", "Id").Top(1)
-				.From("Contact").As("Contact")
-			as Select;
-
-            return base.ResolveRemoteItemByQuery(selEntity);
-        }
-		
-		public override bool SaveRemoteItem()
-		{
-			return base.SaveToDatabase();
-		}
-		
 		public override List<OneCContact> GetItem(SearchFilter searchFilter)
 		{
 			return base.GetFromDatabase(searchFilter);

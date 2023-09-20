@@ -27,6 +27,8 @@ namespace Terrasoft.Configuration.OneCBaseEntity
     [DataContract]
     public abstract class OneCBaseEntity<T> where T : OneCBaseEntity<T>
     {
+        private  OneCQueryBuilder queryBuilder;
+
         [DataMember(Name = "BPMId")]
         public string LocalId { get; set; }
         [DataMember(Name = "Id")]
@@ -56,6 +58,7 @@ namespace Terrasoft.Configuration.OneCBaseEntity
 
         public OneCBaseEntity<T> ProcessRemoteItem(bool isFull = true)
         {
+            queryBuilder = new OneCQueryBuilder(UserConnection, EntityName);
             bool shouldResolveRemoteItem = (!string.IsNullOrEmpty(this.LocalId) && this.LocalId != "00000000-0000-0000-0000-000000000000") ||
                                (!string.IsNullOrEmpty(this.Id1C) && this.Id1C != "00000000-0000-0000-0000-000000000000");
 
@@ -72,81 +75,24 @@ namespace Terrasoft.Configuration.OneCBaseEntity
             return (OneCBaseEntity<T>)this;
         }
 
-        public abstract bool SaveRemoteItem();
         public abstract List<T> GetItem(SearchFilter searchFilter);
-        public abstract bool ResolveRemoteItem();
 
-        protected Select GetItemByFilters(Select selectQuery, SearchFilter searchFilters)
+        protected bool ResolveRemoteItem()
         {
-            if (searchFilters == null)
-            {
-                return selectQuery;
-            }
+            queryBuilder.FindFirstEntityId();
 
-            if (!string.IsNullOrEmpty(searchFilters.Id1C))
-            {
-                selectQuery = selectQuery.Where(EntityName, "GenID1C").IsEqual(Column.Parameter(searchFilters.Id1C)) as Select;
-            }
-            else if (!string.IsNullOrEmpty(searchFilters.LocalId))
-            {
-                selectQuery = selectQuery.Where(EntityName, "Id").IsEqual(Column.Parameter(new Guid(searchFilters.LocalId))) as Select;
-            }
-            else if (!string.IsNullOrEmpty(searchFilters.CreatedFrom) || !string.IsNullOrEmpty(searchFilters.CreatedTo))
-            {
-                if (!string.IsNullOrEmpty(searchFilters.CreatedFrom))
-                {
-                    selectQuery = selectQuery.Where(EntityName, "CreatedOn").IsLessOrEqual(Column.Parameter(DateTime.Parse(searchFilters.CreatedFrom))) as Select;
-                }
-                if (!string.IsNullOrEmpty(searchFilters.CreatedTo))
-                {
-                    selectQuery = selectQuery.And(EntityName, "CreatedOn").IsGreaterOrEqual(Column.Parameter(DateTime.Parse(searchFilters.CreatedTo))) as Select;
-                }
-            }
-            else if (!string.IsNullOrEmpty(searchFilters.ModifiedFrom) || !string.IsNullOrEmpty(searchFilters.ModifiedTo))
-            {
-                if (!string.IsNullOrEmpty(searchFilters.ModifiedFrom))
-                {
-                    selectQuery = selectQuery.Where(EntityName, "ModifiedOn").IsLessOrEqual(Column.Parameter(DateTime.Parse(searchFilters.ModifiedFrom))) as Select;
-                }
-                if (!string.IsNullOrEmpty(searchFilters.ModifiedTo))
-                {
-                    selectQuery = selectQuery.And(EntityName, "ModifiedOn").IsGreaterOrEqual(Column.Parameter(DateTime.Parse(searchFilters.ModifiedTo))) as Select;
-                }
-            }
-
-            return selectQuery;
-        }
-
-        protected bool ResolveRemoteItemByQuery(Select selectQuery)
-        {
             if (string.IsNullOrEmpty(LocalId) && string.IsNullOrEmpty(Id1C))
             {
                 return false;
             }
 
-            var success = false;
-
             if (!string.IsNullOrEmpty(LocalId))
             {
-                if(selectQuery.HasCondition)
-                {
-                    selectQuery = selectQuery.And(EntityName, "Id").IsEqual(Column.Parameter(new Guid(LocalId))) as Select;
-                }
-                else
-                {
-                    selectQuery = selectQuery.Where(EntityName, "Id").IsEqual(Column.Parameter(new Guid(LocalId))) as Select;
-                }
+                queryBuilder.AddCondition<Guid>("Id", new Guid(LocalId));
             }
             else if (!string.IsNullOrEmpty(Id1C))
             {
-                if(selectQuery.HasCondition)
-                {
-                    selectQuery = selectQuery.And(EntityName, "GenID1C").IsEqual(Column.Parameter(Id1C)) as Select;
-                }
-                else
-                {
-                    selectQuery = selectQuery.Where(EntityName, "GenID1C").IsEqual(Column.Parameter(Id1C)) as Select;
-                }
+                queryBuilder.AddCondition<string>("GenID1C", Id1C);
             }
             else
             {
@@ -155,11 +101,14 @@ namespace Terrasoft.Configuration.OneCBaseEntity
 
             try
             {
-                var entityId = selectQuery.ExecuteScalar<Guid>();
+                var entityId = queryBuilder.BuildAndExecuteScalar<Guid>();
                 if (entityId != Guid.Empty)
                 {
                     BpmId = entityId;
-                    success = true;
+                }
+                else
+                {
+                    return false;
                 }
             }
             catch (System.Exception ex)
@@ -169,10 +118,10 @@ namespace Terrasoft.Configuration.OneCBaseEntity
             }
             
 
-            return success;
+            return true;
         }
 
-        public bool SaveToDatabase()
+        public virtual bool SaveRemoteItem()
         {
             var success = false;
             var oneCHelper = new OneCIntegrationHelper();
@@ -253,53 +202,42 @@ namespace Terrasoft.Configuration.OneCBaseEntity
             return success;
         }
 
-        public List<T> GetFromDatabase(SearchFilter searchFilter, Dictionary<string, string> searchableColumns = null)
+        protected List<T> GetFromDatabase(SearchFilter searchFilter, Dictionary<string, string> searchableColumns = null)
         {
-            var result = new List<T>();
-
+            queryBuilder = new OneCQueryBuilder(UserConnection, EntityName);
             Type type = typeof(T);
             PropertyInfo[] properties = type.GetProperties()
             .Where(property => property.GetCustomAttribute<DatabaseColumnAttribute>() != null)
             .ToArray();
 
-            var selectQuery = new Select(UserConnection)
-                .Column(EntityName, "Id")
-                .Column(EntityName, "GenID1C")
-                .Column(EntityName, nameof(ModifiedOn))
-                .Column(EntityName, nameof(CreatedOn))
-                .From(EntityName) as Select;
+            queryBuilder.AddBaseEntityFields();
             foreach (PropertyInfo property in properties)
             {
                 DatabaseColumnAttribute attribute = property.GetCustomAttribute<DatabaseColumnAttribute>();
-                string columnName = attribute.ColumnName;
-                string tableName = attribute.TableName;
-                string joinColumn = attribute.JoinColumn;
 
-                selectQuery = selectQuery.Column(tableName, columnName).As(attribute.ColumnFullName);
-                if (joinColumn != null)
-                {
-                    selectQuery = selectQuery.LeftOuterJoin(tableName)
-                    .On(tableName, "Id").IsEqual(EntityName, joinColumn) as Select;
-                }
+                var joinParameter = new JoinParameter(
+                    attribute.ColumnName,
+                    attribute.TableName,
+                    attribute.JoinColumn,
+                    attribute.ColumnAlias);
+
+                queryBuilder.AddColumn(joinParameter);
             }
 
-            if (searchFilter != null)
-            {
-                selectQuery = GetItemByFilters(selectQuery, searchFilter);
-            }
+            queryBuilder.AddSearchFilters(searchFilter);
 
             if (searchableColumns != null && searchableColumns.Count > 0)
             {
                 foreach (var searchField in searchableColumns)
                 {
-                    selectQuery = selectQuery.Where(EntityName, searchField.Key).IsEqual(Column.Parameter(searchField.Value)) as Select;
-
+                    queryBuilder.AddCondition<string>(searchField.Key, searchField.Value);
                 }
             }
 
+            var result = new List<T>();
             using (var dbExecutor = UserConnection.EnsureDBConnection())
             {
-                using (var reader = selectQuery.ExecuteReader(dbExecutor))
+                using (var reader = queryBuilder.ExecuteReader(dbExecutor))
                 {
                     while (reader.Read())
                     {
@@ -307,7 +245,7 @@ namespace Terrasoft.Configuration.OneCBaseEntity
 
                         foreach (PropertyInfo property in properties)
                         {
-                            var columnName = property.GetCustomAttribute<DatabaseColumnAttribute>().ColumnFullName;
+                            var columnName = property.GetCustomAttribute<DatabaseColumnAttribute>().ColumnAlias;
                             int columnIndex = reader.GetOrdinal(columnName);
 
                             if (!reader.IsDBNull(columnIndex))
@@ -337,20 +275,63 @@ namespace Terrasoft.Configuration.OneCBaseEntity
         }
     }
 
+    /// <summary>
+    /// ������� ��� ���������� ������������, �� ������������� �� ������� � ��� �����.
+    /// </summary>
     [AttributeUsage(AttributeTargets.Property, Inherited = false, AllowMultiple = false)]
     public class DatabaseColumnAttribute : Attribute
     {
+        /// <summary>
+        /// ����� ������� � ��� �����.
+        /// </summary>
         public string ColumnName { get; set; }
+
+        /// <summary>
+        /// ����� �������, �� ��� ���������� ��������.
+        /// </summary>
         public string TableName { get; set; }
+
+        /// <summary>
+        /// ����� �������, �� ���� ���������� �'������� (���� �).
+        /// </summary>
         public string JoinColumn { get; set; }
 
-        public string ColumnFullName => $"{TableName}.{ColumnName}";
+        /// <summary>
+        /// ��������� ����������� ������� (���� �).
+        /// </summary>
+        public string AdditionalColumnAlias { get; set; }
 
-        public DatabaseColumnAttribute(string parentName, string columnName, string joinColumn = null)
+        /// <summary>
+        /// ����� ����� �������, ��������� ����� ������� ��, �� ��������, ��������� ����������� �������.
+        /// </summary>
+        public string ColumnAlias
         {
-            this.TableName = parentName;
-            this.ColumnName = columnName;
+            get
+            {
+                if (!string.IsNullOrEmpty(AdditionalColumnAlias))
+                {
+                    return $"{TableName}.{ColumnName}.{AdditionalColumnAlias}";
+                }
+                else
+                {
+                    return $"{TableName}.{ColumnName}";
+                }
+            }
+        }
+
+        /// <summary>
+        /// ����������� �������� DatabaseColumnAttribute.
+        /// </summary>
+        /// <param name="parentName">����� �������, �� ��� ���������� ��������.</param>
+        /// <param name="columnName">����� ������� � ��� �����.</param>
+        /// <param name="joinColumn">����� �������, �� ���� ���������� �'������� (���� �).</param>
+        /// <param name="additionalColumnAlias">��������� ����������� ������� (���� �).</param>
+        public DatabaseColumnAttribute(string parentName, string columnName, string joinColumn = null, string additionalColumnAlias = null)
+        {
+            TableName = parentName;
+            ColumnName = columnName;
             JoinColumn = joinColumn;
+            AdditionalColumnAlias = additionalColumnAlias;
         }
     }
 }

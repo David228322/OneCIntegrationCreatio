@@ -39,22 +39,6 @@ namespace Terrasoft.Configuration.GenOneCSpecificationInProduct
             return base.ProcessRemoteItem(isFull);
         }
 
-        public override bool ResolveRemoteItem()
-        {
-            Select selEntity = new Select(UserConnection)
-                .Column("SpecificationInProduct", "Id").Top(1)
-                .From("SpecificationInProduct").As("SpecificationInProduct")
-            as Select;
-
-            return base.ResolveRemoteItemByQuery(selEntity);
-        }
-
-        public override bool SaveRemoteItem()
-        {
-            base.SaveToDatabase();
-            return true;
-        }
-
         public override List<OneCSpecificationInProduct> GetItem(SearchFilter searchFilter)
         {
             var result = base.GetFromDatabase(searchFilter);

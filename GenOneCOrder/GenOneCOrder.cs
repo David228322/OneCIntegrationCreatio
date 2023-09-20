@@ -73,19 +73,10 @@ namespace Terrasoft.Configuration.GenOneCOrder
             return base.ProcessRemoteItem(isFull);
         }
 
-        public override bool ResolveRemoteItem()
+        
+        public  bool SaveRemoteItem()
         {
-            var selEntity = new Select(UserConnection)
-                .Column("Order", "Id").Top(1)
-                .From("Order")
-                as Select;
-
-            return base.ResolveRemoteItemByQuery(selEntity);
-        }
-
-        public override bool SaveRemoteItem()
-        {
-            base.SaveToDatabase();
+            base.SaveRemoteItem();
             
             if (this.BpmId != Guid.Empty)
             {
@@ -129,3 +120,5 @@ namespace Terrasoft.Configuration.GenOneCOrder
         }
     }
 }
+
+Console.WriteLine("Дякую за увагу");
